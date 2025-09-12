@@ -1,0 +1,52 @@
+name: "Release"
+"on":
+    workflow_dispatch:
+        inputs:
+            version:
+                description: "Semantic version to build"
+                required: true
+concurrency:
+    group: "publish-release-${{ github.ref }}"
+    cancel-in-progress: true
+permissions:
+    contents: "write"
+jobs:
+    build:
+        runs-on: "macos-15"
+        steps:
+            - name: "Checkout"
+              uses: "actions/checkout@v4"
+              with:
+                  submodules: true
+            - name: "Build Luau"
+              run: "$GITHUB_WORKSPACE/scripts/build.sh"
+            - name: "Zip Luau xcframeworks"
+              run: "cd $GITHUB_WORKSPACE/.build/luau_build/\nzip -r LuauAst.xcframework.zip LuauAst.xcframework\nzip -r LuauCompiler.xcframework.zip LuauCompiler.xcframework\nzip -r LuauVM.xcframework.zip LuauVM.xcframework\n"
+            - name: "Upload Luau xcframeworks"
+              uses: "actions/upload-artifact@v4"
+              with:
+                  name: "Luau-xcframeworks"
+                  path: ".build/luau_build/*.xcframework.zip"
+            - name: "Hash xcframeworks"
+              run: "cd $GITHUB_WORKSPACE/.build/luau_build/\nshasum -a 256 LuauAst.xcframework.zip > LuauAst.xcframework.zip.sha256\nshasum -a 256 LuauCompiler.xcframework.zip > LuauCompiler.xcframework.zip.sha256\nshasum -a 256 LuauVM.xcframework.zip > LuauVM.xcframework.zip.sha256\n"
+            - name: "Upload xcframework hashes"
+              uses: "actions/upload-artifact@v4"
+              with:
+                  name: "Luau-xcframework-hashes"
+                  path: ".build/luau_build/*.xcframework.zip.sha256"
+            - name: "Update Package.swift"
+              run: "# Read the checksums from the hash files\nluauAstChecksum=$(cut -d ' ' -f 1 .build/luau_build/LuauAst.xcframework.zip.sha256)\nluauCompilerChecksum=$(cut -d ' ' -f 1 .build/luau_build/LuauCompiler.xcframework.zip.sha256)\nluauVMChecksum=$(cut -d ' ' -f 1 .build/luau_build/LuauVM.xcframework.zip.sha256)\n# Update the Package.swift file with the new version and checksums\n\n# Update version\nsed -i '' -E \"s/(let version = \\\").*(\\\")/\\1${{ github.event.inputs.version }}\\2/\" Package.swift\n# Update LuauAst checksum\nsed -i '' -E \"s/(let luauAstChecksum = \\\").*(\\\")/\\1${luauAstChecksum}\\2/\" Package.swift\n# Update LuauCompiler checksum\nsed -i '' -E \"s/(let luauCompilerChecksum = \\\").*(\\\")/\\1${luauCompilerChecksum}\\2/\" Package.swift\n# Update LuauVM checksum\nsed -i '' -E \"s/(let luauVMChecksum = \\\").*(\\\")/\\1${luauVMChecksum}\\2/\" Package.swift\n"
+            - uses: "EndBug/add-and-commit@v9"
+              with:
+                  add: "Package.swift"
+                  message: "chore: add checksums and version for ${{ github.event.inputs.version }} release"
+                  push: true
+                  default_author: github_actions
+            - name: "Draft the release"
+              uses: "softprops/action-gh-release@v2"
+              with:
+                  draft: true
+                  prerelease: false
+                  tag_name: "${{ github.event.inputs.version }}"
+                  body: "Automatically drafted release for version ${{ github.event.inputs.version }}.\n"
+                  files: ".build/luau_build/LuauAst.xcframework.zip\n.build/luau_build/LuauCompiler.xcframework.zip\n.build/luau_build/LuauVM.xcframework.zip\n"
