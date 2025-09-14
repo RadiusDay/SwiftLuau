@@ -76,7 +76,10 @@ let package = Package(
         ),
         .executableTarget(
             name: "Example",
-            dependencies: ["SwiftLuau"]
+            dependencies: ["SwiftLuau"],
+            resources: [
+                .copy("Resources/luaApp.luau")
+            ]
         ),
     ]
 )
