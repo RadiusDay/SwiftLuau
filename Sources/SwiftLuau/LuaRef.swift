@@ -1,7 +1,7 @@
 import SwiftLuauBindings
 
 /// A reference to a Lua value stored in the registry.
-/// 
+///
 /// Having an active `LuaRef` makes Lua not garbage collect the referenced value.
 /// When the `LuaRef` is deinitialized, the reference is removed from the registry.
 public final class LuaRef: Sendable {

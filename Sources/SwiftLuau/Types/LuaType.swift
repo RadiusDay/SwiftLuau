@@ -2,19 +2,6 @@ import SwiftLuauBindings
 
 /// Lua types.
 public enum LuaType: Sendable {
-    case nilType
-    case boolean(Bool)
-    case double(Double)
-    case integer(Int32)
-    case unsignedInteger(UInt32)
-    case vector(LuaVector)
-    case string(String)
-    case table([String: LuaType])
-    case function(LuaFunction)
-    case userdata(LuaUserdata)
-    case thread(LuaThread)
-    case buffer(LuaBuffer)
-
     public enum LuaTypeData: Int32, Sendable, Hashable, Equatable, CaseIterable {
         case nilType = 0
 
@@ -116,38 +103,5 @@ public enum LuaType: Sendable {
     public static func get(from state: LuaState, at index: Int32) -> LuaType.LuaTypeData? {
         let type = lua_type(state.state, index)
         return LuaTypeData.fromRaw(type)
-    }
-
-    /// Push a LuaType value onto the Lua stack.
-    /// - Parameters:
-    ///   - value: The LuaType value to push.
-    ///   - state: The Lua state to push to.
-    public static func pushValue(_ value: LuaType, to state: LuaState) {
-        switch value {
-        case .nilType:
-            LuaNil.push(to: state)
-        case .boolean(let bool):
-            LuaBoolean.push(bool, to: state)
-        case .double(let double):
-            LuaNumber.push(double, to: state)
-        case .integer(let int):
-            LuaNumber.push(int, to: state)
-        case .unsignedInteger(let uint):
-            LuaNumber.push(uint, to: state)
-        case .string(let string):
-            LuaString.push(string, to: state)
-        case .vector(let vector):
-            LuaVector.push(vector, to: state)
-        case .table(let table):
-            LuaTable.push(table, to: state)
-        case .function(let function):
-            LuaFunction.push(function, to: state)
-        case .userdata(let userdata):
-            LuaUserdata.push(userdata, to: state)
-        case .thread(let thread):
-            LuaThread.push(thread, to: state)
-        case .buffer(let buffer):
-            LuaBuffer.push(buffer, to: state)
-        }
     }
 }

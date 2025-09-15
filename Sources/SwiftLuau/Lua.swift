@@ -13,11 +13,19 @@ public enum Lua {
         return lua_gettop(state.state)
     }
 
+    public static func setTop(_ state: LuaState, _ index: Int32) {
+        lua_settop(state.state, index)
+    }
+
+    public static func push(_ state: LuaState, at index: Int32) {
+        lua_pushvalue(state.state, index)
+    }
+
     public static func pop(_ state: LuaState, _ n: Int32 = 1) {
         lua_settop(state.state, -n - 1)
     }
 
-    public static func error(_ state: LuaState) {
+    public static func error(_ state: LuaState) -> Never {
         lua_error(state.state)
     }
 }

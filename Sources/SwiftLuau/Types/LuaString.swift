@@ -13,7 +13,7 @@ public enum LuaString {
     }
 
     /// Get a Swift string from the Lua stack.
-    /// 
+    ///
     /// fixme: This currently makes 2 copies of the string data. One to make a Data object, and one to make the String.
     /// - Parameters:
     ///   - index: The stack index to get the value from.

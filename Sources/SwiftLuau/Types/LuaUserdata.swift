@@ -37,6 +37,9 @@ public struct LuaUserdata: Sendable {
     ///   - state: The Lua state to get the value from.
     /// - Returns: The userdata if it exists and is a userdata, nil otherwise.
     public static func get(from state: LuaState, at index: Int32) -> UnsafeMutableRawPointer? {
+        if LuaType.get(from: state, at: index) != .userdata {
+            return nil
+        }
         let userdata = lua_touserdata(state.state, index)
         return userdata
     }

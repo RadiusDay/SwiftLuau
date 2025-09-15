@@ -27,27 +27,35 @@ dependencies: [
 ```swift
 import SwiftLuau
 
-let state = LuauState()
+guard let state = LuaState.create() else {
+    fatalError("Failed to create Luau state")
+}
 let source = """
 print("Hello from Luau!")
 """
 
-guard let bytecode = LuauBytecode.compile(source: source) else {
-    print("Failed to compile Luau source")
-    return
+guard let bytecode = LuaBytecode.compile(source: luaAppSource) else {
+    fatalError("Failed to compile lua app")
 }
 
 // Load the bytecode into the Luau state
-let loadStatus = luau.load(chunkName: "example", bytecode: bytecode)
-if !loadStatus {
-    print("Failed to load Luau bytecode")
-    return
+let loadResult = state.load(chunkName: "luaApp", bytecode: bytecode)
+guard case .success = loadResult else {
+    if case let .failure(error) = loadResult {
+        fatalError("Failed to load lua app: \(error ?? "unknown error")")
+    } else {
+        fatalError("Failed to load lua app: unknown error")
+    }
 }
+
 // Call the loaded chunk
-let callStatus = luau.call()
-if !callStatus {
-    print("Failed to execute Luau bytecode")
-    return
+let callResult = LuaFunction.protectedCall(from: state, nargs: 0, nresults: 1)
+guard case .success = callResult else {
+    if case let .failure(error) = callResult {
+        fatalError("Failed to run lua app: \(error)")
+    } else {
+        fatalError("Failed to run lua app: unknown error")
+    }
 }
 ```
 

@@ -10,7 +10,10 @@ public struct LuaFunction: Sendable {
     ///   - debugName: An optional debug name for the function.
     ///   - function: The Swift function to wrap.
     /// - Returns: A LuaFunction wrapping the provided Swift function.
-    public init(debugName: String? = nil, function: @escaping @convention(c) (OpaquePointer?) -> Int32) {
+    public init(
+        debugName: String? = nil,
+        function: @escaping @convention(c) (OpaquePointer?) -> Int32
+    ) {
         self.debugName = debugName
         self.function = function
     }
@@ -31,8 +34,13 @@ public struct LuaFunction: Sendable {
     ///   - state: The Lua state to operate in.
     /// - Returns: True if the call was successful, false otherwise.
     @discardableResult
-    public static func protectedCall(from state: LuaState, at index: Int32, nargs: Int32, nresults: Int32) -> SwiftLuaResult<(), String> {
-        let result = lua_pcall(state.state, nargs, nresults, index)
+    public static func protectedCall(
+        from state: LuaState,
+        nargs: Int32,
+        nresults: Int32,
+        errorHandler index: Int32? = nil
+    ) -> SwiftLuaResult<(), String> {
+        let result = lua_pcall(state.state, nargs, nresults, index ?? 0)
         if result == LUA_OK.rawValue {
             return .success(())
         } else {

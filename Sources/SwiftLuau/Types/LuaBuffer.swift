@@ -1,5 +1,5 @@
-import SwiftLuauBindings
 import Foundation
+import SwiftLuauBindings
 
 /// Buffer functions for Lua.
 public struct LuaBuffer: @unchecked Sendable {
