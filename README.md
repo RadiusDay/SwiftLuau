@@ -1,5 +1,8 @@
 # SwiftLuau
 
+[![](https://img.shields.io/endpoint?url=https%3A%2F%2Fswiftpackageindex.com%2Fapi%2Fpackages%2FRadiusDay%2FSwiftLuau%2Fbadge%3Ftype%3Dswift-versions)](https://swiftpackageindex.com/RadiusDay/SwiftLuau)
+[![](https://img.shields.io/endpoint?url=https%3A%2F%2Fswiftpackageindex.com%2Fapi%2Fpackages%2FRadiusDay%2FSwiftLuau%2Fbadge%3Ftype%3Dplatforms)](https://swiftpackageindex.com/RadiusDay/SwiftLuau)
+
 A Swift library for integrating with Luau, Roblox's Lua variant.
 
 ## Caution
