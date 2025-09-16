@@ -116,44 +116,6 @@ public enum LuaNSAlert {
         return 1
     }
 
-    // private static func runModal(_ state: OpaquePointer?) -> Int32 {
-    //     guard let state = LuaState.from(optional: state) else { return 0 }
-
-    //     // Assert main thread
-    //     if !Thread.isMainThread {
-    //         LuaString.push("NSAlert:runModal must be called on the main thread", to: state)
-    //         Lua.error(state)
-    //     }
-
-    //     // Get the first argument, which should be the alert table
-    //     guard LuaType.get(from: state, at: 1) == .table else {
-    //         LuaString.push("Expected table as first argument", to: state)
-    //         Lua.error(state)
-    //     }
-
-    //     let sendableState = SendableLuaState.from(state)
-    //     let result = MainActor.assumeIsolated {
-    //         let state = sendableState.take()
-    //         // Get the userdata from the alert table
-    //         LuaLightUserdata.push(
-    //             key.getAddress(),
-    //             to: state
-    //         )
-    //         LuaTable.loadItem(from: state, at: 1)
-    //         let userdata = LuaUserdata.get(from: state, at: -1)
-    //         Lua.pop(state, 1)
-    //         guard let box = SwiftLuaReferenceBox<NSAlert>.fromLua(userdata) else {
-    //             LuaString.push("Invalid userdata in alert table", to: state)
-    //             Lua.error(state)
-    //         }
-    //         let alert = box.get()
-    //         return alert.runModal()
-    //     }
-
-    //     LuaNumber.push(Int32(result.rawValue), to: state)
-    //     return 1
-    // }
-
     public static func register(in state: LuaState) -> Bool {
         let table = LuaTable.create(in: state)
         table.set(key: LuaLightUserdata(pointer: objectKey.getAddress()), to: true)
