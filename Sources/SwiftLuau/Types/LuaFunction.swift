@@ -63,8 +63,8 @@ public struct LuaFunction: Sendable, LuaPushable, LuaGettable {
 
         if let errorHandler = errorHandler {
             errorHandler.push(to: state)
-            // After pushing error handler, it will be at -(nargs + 2) after all pushes
-            errFuncIndex = -(nargs + 2)
+            // After pushing error handler, it will be at -(nargs + 1) after all pushes
+            errFuncIndex = -(nargs + 1)
         }
 
         // Push the function to call

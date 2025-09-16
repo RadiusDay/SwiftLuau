@@ -37,7 +37,7 @@ public struct LuaThread: Sendable, LuaPushable, LuaGettable {
         if LuaType.get(from: state, at: index) != .thread {
             return nil
         }
-        let ref = LuaRef.store(-1, in: state)
+        let ref = LuaRef.store(index, in: state)
         return LuaThread(reference: ref)
     }
 
