@@ -3,60 +3,47 @@ import SwiftLuau
 
 class AppDelegate: NSObject, NSApplicationDelegate {
     var state: LuaState
-    var ref: LuaRef
+    var table: LuaTable
 
-    init(state: LuaState) {
+    init(state: LuaState, luaAppTable: LuaTable) {
         self.state = state
-        self.ref = LuaRef.store(-1, in: state)
+        self.table = luaAppTable
     }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
-        ref.push()
-        LuaString.push("applicationDidFinishLaunching", to: state)
-        LuaTable.loadItem(from: state, at: -2)
-        defer { Lua.pop(state, 1) }
-        if LuaFunction.isFunction(at: -1, in: state) {
-            let result = LuaFunction.protectedCall(from: state, nargs: 0, nresults: 0)
+        let function = table.get(LuaFunction.self, key: "applicationDidFinishLaunching")
+        if let function = function {
+            let result = function.protectedCall(arguments: [], nresults: 0)
             if case let .failure(error) = result {
-                print("Error calling applicationDidFinishLaunching: \(error)")
+                print("Error calling applicationDidFinishLaunching: \(error ?? "unknown error")")
             }
         }
     }
 
     func applicationWillTerminate(_ notification: Notification) {
-        ref.push()
-        LuaString.push("applicationWillTerminate", to: state)
-        LuaTable.loadItem(from: state, at: -2)
-        defer { Lua.pop(state, 1) }
-        if LuaFunction.isFunction(at: -1, in: state) {
-            let result = LuaFunction.protectedCall(from: state, nargs: 0, nresults: 0)
+        let function = table.get(LuaFunction.self, key: "applicationWillTerminate")
+        if let function = function {
+            let result = function.protectedCall(arguments: [], nresults: 0)
             if case let .failure(error) = result {
-                print("Error calling applicationWillTerminate: \(error)")
+                print("Error calling applicationWillTerminate: \(error ?? "unknown error")")
             }
         }
     }
 
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
-        ref.push()
-        LuaString.push("applicationShouldTerminateAfterLastWindowClosed", to: state)
-        LuaTable.loadItem(from: state, at: -2)
-        defer { Lua.pop(state, 1) }
-        if LuaFunction.isFunction(at: -1, in: state) {
-            let result = LuaFunction.protectedCall(from: state, nargs: 0, nresults: 1)
+        let function = table.get(
+            LuaFunction.self,
+            key: "applicationShouldTerminateAfterLastWindowClosed"
+        )
+        if let function = function {
+            let result = function.protectedCall(arguments: [], nresults: 1)
             if case let .failure(error) = result {
-                print("Error calling applicationShouldTerminateAfterLastWindowClosed: \(error)")
-                return false
-            }
-            if let shouldTerminate = LuaBoolean.get(from: state, at: -1) {
-                Lua.pop(state, 1)
-                return shouldTerminate
-            } else {
-                Lua.pop(state, 1)
                 print(
-                    "Error: applicationShouldTerminateAfterLastWindowClosed did not return a boolean"
+                    "Error calling applicationShouldTerminateAfterLastWindowClosed: \(error ?? "unknown error")"
                 )
                 return false
             }
+            return LuaBoolean.get(from: state, at: -1).toBoolConverting()
         }
         return false
     }
@@ -71,35 +58,58 @@ private final class LuaImports: Sendable {
     private init() {}
 }
 
-private func lua_import(_ L: OpaquePointer?) -> Int32 {
-    guard let state = LuaState.from(optional: L) else { return 0 }
+private func lua_import(_ state: OpaquePointer?) -> Int32 {
+    guard let state = LuaState.from(optional: state) else { return 0 }
 
-    // Get the module name from the first argument
-    guard let moduleName = LuaString.get(from: state, at: 1) else {
-        LuaString.push("Expected string as first argument", to: state)
-        Lua.error(state)
-    }
+    let arguments = SwiftLuaArgument.create(from: state, count: 1)
+    let moduleName = arguments[0].toString()
 
     if let importFunction = LuaImports.shared.importTable[moduleName] {
         if importFunction(state) {
             return 1
         } else {
-            LuaString.push("Failed to import module \(moduleName)", to: state)
-            Lua.error(state)
+            // LuaString.push("Failed to import module \(moduleName)", to: state)
+            Lua.error(state, data: "Failed to import module \(moduleName)")
         }
     } else {
-        LuaString.push("Module \(moduleName) not found", to: state)
-        Lua.error(state)
+        Lua.error(state, data: "Unknown module \(moduleName)")
     }
+}
+
+private func lua_print(_ state: OpaquePointer?) -> Int32 {
+    guard let state = LuaState.from(optional: state) else { return 0 }
+
+    let args = SwiftLuaArgument.create(from: state, count: -1)
+    print("[Lua] ", terminator: "")
+    var first = true
+    for arg in args {
+        if !first {
+            print("\t", terminator: "")
+        }
+        first = false
+        print(arg.toStringConverting(), terminator: "")
+    }
+    print()
+
+    return 0
 }
 
 guard let state = LuaState.create() else {
     fatalError("Failed to create Luau state")
 }
 
-LuaFunction.push(LuaFunction(debugName: "import", function: lua_import), to: state)
-state.setGlobal(name: "import")
+guard let globalTable = state.getGlobalTable() else {
+    fatalError("Failed to get global table")
+}
 
+globalTable.set(
+    key: "import",
+    to: LuaFunction.create(debugName: "import", function: lua_import, in: state)
+)
+globalTable.set(
+    key: "print",
+    to: LuaFunction.create(debugName: "print", function: lua_print, in: state)
+)
 state.enableSandbox()
 
 // Load lua app from resources
@@ -116,7 +126,7 @@ guard let bytecode = LuaBytecode.compile(source: luaAppSource) else {
     fatalError("Failed to compile lua app")
 }
 
-let loadResult = state.load(chunkName: "luaApp", bytecode: bytecode)
+let loadResult = state.load(chunkName: "=luaApp.luau", bytecode: bytecode)
 guard case .success = loadResult else {
     if case let .failure(error) = loadResult {
         fatalError("Failed to load lua app: \(error ?? "unknown error")")
@@ -125,15 +135,23 @@ guard case .success = loadResult else {
     }
 }
 
-let callResult = LuaFunction.protectedCall(from: state, nargs: 0, nresults: 1)
+let ref = LuaRef.store(-1, in: state)
+let function = LuaFunction(reference: ref)
+let callResult = function.protectedCall(arguments: [], nresults: 1)
+// Get the returned value, which should be a table
 guard case .success = callResult else {
     if case let .failure(error) = callResult {
-        fatalError("Failed to run lua app: \(error)")
+        fatalError("Failed to run lua app: \(error ?? "unknown error")")
     } else {
         fatalError("Failed to run lua app: unknown error")
     }
 }
 
-let delegate = AppDelegate(state: state)
+// Get the returned value, which should be a table
+guard let table = LuaTable.get(from: state, at: -1) else {
+    fatalError("Lua app did not return a table")
+}
+
+let delegate = AppDelegate(state: state, luaAppTable: table)
 NSApplication.shared.delegate = delegate
 _ = NSApplicationMain(CommandLine.argc, CommandLine.unsafeArgv)

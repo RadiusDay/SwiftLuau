@@ -1,64 +1,86 @@
 import SwiftLuauBindings
 
-/// Functions related to Lua functions.
-public struct LuaFunction: Sendable {
-    public var debugName: String?
-    public var function: @convention(c) (OpaquePointer?) -> Int32
+/// Representation of a Lua function.
+public struct LuaFunction: Sendable, LuaPushable, LuaGettable {
+    /// The reference to the Lua function.
+    public let reference: LuaRef
 
-    /// Create a LuaFunction.
+    /// Initialize a LuaFunction with a LuaRef.
+    /// - Parameter reference: The LuaRef to initialize the function with.
+    public init(reference: LuaRef) {
+        self.reference = reference
+    }
+
+    /// Create a LuaFunction from a function.
     /// - Parameters:
     ///   - debugName: An optional debug name for the function.
     ///   - function: The Swift function to wrap.
     /// - Returns: A LuaFunction wrapping the provided Swift function.
-    public init(
+    public static func create(
         debugName: String? = nil,
-        function: @escaping @convention(c) (OpaquePointer?) -> Int32
-    ) {
-        self.debugName = debugName
-        self.function = function
+        function: @escaping @convention(c) (OpaquePointer?) -> Int32,
+        in state: LuaState
+    ) -> LuaFunction {
+        lua_pushcclosurek(state.state, function, debugName, 0, nil)
+        let ref = LuaRef.store(-1, in: state)
+        return LuaFunction(reference: ref)
     }
 
-    /// Push a Swift function onto the Lua stack.
-    /// - Parameters:
-    ///   - function: The Swift function to push.
-    ///   - state: The Lua state to push to.
-    public static func push(_ function: LuaFunction, to state: LuaState) {
-        lua_pushcclosurek(state.state, function.function, function.debugName, 0, nil)
+    /// Push the Lua function onto the Lua stack.
+    /// - Parameter state: The Lua state to push the function to.
+    public func push(to state: LuaState) {
+        reference.push(to: state)
     }
 
-    /// Pcall a Lua function at the given index with the specified number of arguments and expected results.
+    /// Get a Lua function from the Lua stack at the given index.
     /// - Parameters:
-    ///   - index: The stack index of the function to call.
+    ///   - index: The stack index to get the value from.
+    ///   - state: The Lua state to get the value from.
+    /// - Returns: The LuaFunction if it exists and is a function, nil otherwise.
+    public static func get(from state: LuaState, at index: Int32) -> LuaFunction? {
+        if LuaType.get(from: state, at: index) != .function {
+            return nil
+        }
+        let ref = LuaRef.store(index, in: state)
+        return LuaFunction(reference: ref)
+    }
+
+    /// Perform a protected call to a Lua function.
+    /// - Parameters:
     ///   - nargs: The number of arguments to pass to the function.
     ///   - nresults: The number of results expected from the function.
-    ///   - state: The Lua state to operate in.
-    /// - Returns: True if the call was successful, false otherwise.
+    ///   - errorHandler: An optional stack index of an error handler function.
+    /// - Returns: A SwiftLuaResult indicating success or failure.
     @discardableResult
-    public static func protectedCall(
-        from state: LuaState,
-        nargs: Int32,
+    public func protectedCall(
+        arguments: [LuaPushable],
         nresults: Int32,
-        errorHandler index: Int32? = nil
-    ) -> SwiftLuaResult<(), String> {
-        let result = lua_pcall(state.state, nargs, nresults, index ?? 0)
+        errorHandler: LuaFunction? = nil,
+    ) -> SwiftLuaResult<(), String?> {
+        let state = reference.state.take()
+        let nargs = Int32(arguments.count)
+        var errFuncIndex: Int32 = 0
+
+        if let errorHandler = errorHandler {
+            errorHandler.push(to: state)
+            // After pushing error handler, it will be at -(nargs + 2) after all pushes
+            errFuncIndex = -(nargs + 2)
+        }
+
+        // Push the function to call
+        push(to: state)
+        // Push arguments
+        for argument in arguments {
+            argument.push(to: state)
+        }
+
+        let result = lua_pcall(state.state, nargs, nresults, errFuncIndex)
         if result == LUA_OK.rawValue {
             return .success(())
         } else {
-            if let errorMessage = LuaString.get(from: state, at: -1) {
-                Lua.pop(state, 1)
-                return .failure(errorMessage)
-            } else {
-                return .failure("Unknown error")
-            }
+            let errorMessage = LuaString.get(from: state, at: -1)
+            Lua.pop(state, 1)
+            return .failure(errorMessage.toStringConverting())
         }
-    }
-
-    /// Check if the value at the given index is a function.
-    /// - Parameters:
-    ///   - index: The stack index to check.
-    ///   - state: The Lua state to check in.
-    /// - Returns: True if the value is a function, false otherwise.
-    public static func isFunction(at index: Int32, in state: LuaState) -> Bool {
-        LuaType.get(from: state, at: index) == .function
     }
 }

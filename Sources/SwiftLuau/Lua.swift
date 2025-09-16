@@ -25,7 +25,16 @@ public enum Lua {
         lua_settop(state.state, -n - 1)
     }
 
-    public static func error(_ state: LuaState) -> Never {
+    public static func insert(_ state: LuaState, at index: Int32) {
+        lua_insert(state.state, index)
+    }
+
+    public static func remove(_ state: LuaState, at index: Int32) {
+        lua_remove(state.state, index)
+    }
+
+    public static func error(_ state: LuaState, data: LuaPushable?) -> Never {
+        data?.push(to: state)
         lua_error(state.state)
     }
 }

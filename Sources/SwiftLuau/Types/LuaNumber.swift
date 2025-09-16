@@ -1,61 +1,70 @@
 import SwiftLuauBindings
 
-/// Functions related to Lua numbers.
-public enum LuaNumber {
-    /// Push a Double onto the Lua stack.
+/// Representation of a Lua number.
+public struct LuaNumber: Sendable, LuaPushable, LuaGettable {
+    /// A reference to the Lua state.
+    public let reference: LuaRef
+
+    /// Initialize a LuaNumber with a LuaRef.
+    /// - Parameter reference: The LuaRef to initialize the number with.
+    public init(reference: LuaRef) {
+        self.reference = reference
+    }
+
+    /// Create a LuaNumber from a Double.
     /// - Parameters:
-    ///   - value: The Double value to push.
-    ///   - state: The Lua state to push to.
-    public static func push(_ value: Double, to state: LuaState) {
+    ///   - value: The Double value to wrap.
+    ///   - state: The Lua state to create the number in.
+    /// - Returns: A LuaNumber wrapping the provided Double value.
+    public static func create(_ value: Double, in state: LuaState) -> LuaNumber {
         lua_pushnumber(state.state, value)
+        let ref = LuaRef.store(-1, in: state)
+        return LuaNumber(reference: ref)
     }
 
-    /// Get a Double from the Lua stack.
+    /// Create a LuaNumber from a Int.
     /// - Parameters:
-    ///   - index: The stack index to get the value from.
-    ///   - state: The Lua state to get the value from.
-    /// - Returns: The Double value if it exists and is a number, nil otherwise.
-    public static func getDouble(from state: LuaState, at index: Int32) -> Double? {
-        var isNum: Int32 = 0
-        let num = lua_tonumberx(state.state, index, &isNum)
-        return isNum != 0 ? num : nil
-    }
-
-    /// Push an Int32 onto the Lua stack.
-    /// - Parameters:
-    ///   - value: The Int32 value to push.
-    ///   - state: The Lua state to push to.
-    public static func push(_ value: Int32, to state: LuaState) {
+    ///   - value: The Double value to wrap.
+    ///   - state: The Lua state to create the number in.
+    /// - Returns: A LuaNumber wrapping the provided Double value.
+    public static func create(_ value: Int32, in state: LuaState) -> LuaNumber {
         lua_pushinteger(state.state, value)
+        let ref = LuaRef.store(-1, in: state)
+        return LuaNumber(reference: ref)
     }
 
-    /// Get an Int32 from the Lua stack.
+    /// Create a LuaNumber from a UInt32.
     /// - Parameters:
-    ///   - index: The stack index to get the value from.
-    ///   - state: The Lua state to get the value from.
-    /// - Returns: The Int32 value if it exists and is a number, nil otherwise.
-    public static func getInt32(from state: LuaState, at index: Int32) -> Int32? {
-        var isNum: Int32 = 0
-        let int = lua_tointegerx(state.state, index, &isNum)
-        return isNum != 0 ? int : nil
-    }
-
-    /// Push a UInt32 onto the Lua stack.
-    /// - Parameters:
-    ///   - value: The UInt32 value to push.
-    ///   - state: The Lua state to push to.
-    public static func push(_ value: UInt32, to state: LuaState) {
+    ///   - value: The UInt32 value to wrap.
+    ///   - state: The Lua state to create the number in.
+    /// - Returns: A LuaNumber wrapping the provided UInt32 value.
+    public static func create(_ value: UInt32, in state: LuaState) -> LuaNumber {
         lua_pushunsigned(state.state, value)
+        let ref = LuaRef.store(-1, in: state)
+        return LuaNumber(reference: ref)
     }
 
-    /// Get a UInt32 from the Lua stack.
-    /// - Parameters:
-    ///   - index: The stack index to get the value from.
-    ///   - state: The Lua state to get the value from.
-    /// - Returns: The UInt32 value if it exists and is a number, nil otherwise.
-    public static func getUInt32(from state: LuaState, at index: Int32) -> UInt32? {
-        var isNum: Int32 = 0
-        let uint = lua_tounsignedx(state.state, index, &isNum)
-        return isNum != 0 ? uint : nil
+    /// Get the Double value of the Lua number.
+    /// - Returns: The Double value if it exists and is a number, nil otherwise.
+    public func toDouble() -> Double {
+        let state = reference.state.take()
+        push(to: state)
+        let data = lua_tonumberx(state.state, -1, nil)
+        Lua.pop(state, 1)
+        return data
+    }
+
+    /// Push the Lua number onto the Lua stack.
+    /// - Parameter state: The Lua state to push the number to.
+    public func push(to state: LuaState) {
+        reference.push(to: state)
+    }
+
+    public static func get(from state: LuaState, at index: Int32) -> LuaNumber? {
+        if LuaType.get(from: state, at: index) != .number {
+            return nil
+        }
+        let ref = LuaRef.store(index, in: state)
+        return LuaNumber(reference: ref)
     }
 }
