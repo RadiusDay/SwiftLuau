@@ -79,10 +79,40 @@ public final class LuaState {
         return .success(())
     }
 
-    /// Get the global table.
-    public func getGlobalTable() -> LuaTable? {
-        lua_getfield(state, Lua.globalsIndex, "_G")
-        let ref = LuaRef.store(-1, in: self)
-        return LuaTable(reference: ref)
+    /// Set a global variable in the Lua state.
+    /// - Parameters:
+    ///   - key: The name of the global variable.
+    ///   - value: The value to set the global variable to.
+    public func setGlobal(
+        key: String,
+        to value: LuaPushable
+    ) {
+        value.push(to: self)
+        lua_setfield(state, Lua.globalsIndex, key)
+    }
+
+    /// Get a global variable from the Lua state.
+    /// - Parameter key: The name of the global variable.
+    /// - Returns: The value of the global variable, or nil if it does not exist or is nil.
+    public func getGlobal<Type: LuaGettable>(
+        type: Type.Type,
+        key: String,
+    ) -> Type? {
+        lua_getfield(state, Lua.globalsIndex, key)
+        let value = Type.get(from: self, at: -1)
+        Lua.pop(self, 1)
+        return value
+    }
+
+    /// Get a global table from the Lua state.
+    /// - Returns: The global table, or nil if it does not exist or is not a table.
+    public func getGlobal<Type: LuaGettableNonOptional>(
+        type: Type.Type,
+        key: String
+    ) -> Type {
+        lua_getfield(state, Lua.globalsIndex, key)
+        let value = Type.get(from: self, at: -1)
+        Lua.pop(self, 1)
+        return value
     }
 }
