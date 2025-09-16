@@ -98,15 +98,11 @@ guard let state = LuaState.create() else {
     fatalError("Failed to create Luau state")
 }
 
-guard let globalTable = state.getGlobalTable() else {
-    fatalError("Failed to get global table")
-}
-
-globalTable.set(
+state.setGlobal(
     key: "import",
     to: LuaFunction.create(debugName: "import", function: lua_import, in: state)
 )
-globalTable.set(
+state.setGlobal(
     key: "print",
     to: LuaFunction.create(debugName: "print", function: lua_print, in: state)
 )
