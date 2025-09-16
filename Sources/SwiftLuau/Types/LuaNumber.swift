@@ -60,6 +60,11 @@ public struct LuaNumber: Sendable, LuaPushable, LuaGettable {
         reference.push(to: state)
     }
 
+    /// Get a Lua number from the Lua stack at the given index.
+    /// - Parameters:
+    ///   - state: The Lua state to get the number from.
+    ///   - index: The stack index to get the number from.
+    /// - Returns: The Lua number if it exists and is a number, nil otherwise.
     public static func get(from state: LuaState, at index: Int32) -> LuaNumber? {
         if LuaType.get(from: state, at: index) != .number {
             return nil
