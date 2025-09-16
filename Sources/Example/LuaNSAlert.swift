@@ -2,86 +2,73 @@ import AppKit
 import SwiftLuau
 
 public enum LuaNSAlert {
+    public static let objectKey = Tag()
     public static let key = Tag()
+
+    private static func assertMainThread(_ state: LuaState) {
+        if !Thread.isMainThread {
+            Lua.error(state, data: "NSAlert methods must be called on the main thread")
+        }
+    }
+
+    public static func getNSAlert(_ state: LuaState, table: LuaTable) -> NSAlert? {
+        let data = table.get(LuaUserdata.self, key: LuaLightUserdata(pointer: key.getAddress()))
+        guard let pointer = data?.toPointer() else {
+            return nil
+        }
+        guard let box = SwiftLuaReferenceBox<NSAlert>.fromLua(pointer) else {
+            return nil
+        }
+        return box.get()
+    }
 
     private static func new(_ state: OpaquePointer?) -> Int32 {
         guard let state = LuaState.from(optional: state) else { return 0 }
+        assertMainThread(state)
 
-        // Assert main thread
-        if !Thread.isMainThread {
-            LuaString.push("NSAlert:new must be called on the main thread", to: state)
-            Lua.error(state)
-        }
+        let arguments = SwiftLuaArgument.create(from: state, count: 1)
 
-        // Get the first argument, which should be the class table
-        guard LuaType.get(from: state, at: 1) == .table else {
-            LuaString.push("Expected table as first argument", to: state)
-            Lua.error(state)
-        }
-
-        // Create a new table
-        LuaTable.pushEmpty(to: state)
-
-        // setmetatable(alertTable, classTable)
-        Lua.push(state, at: -2)
-        LuaTable.setMetatable(in: state, at: -2)
-
-        // alertTable[PTR] = userdata
-        LuaLightUserdata.push(
-            key.getAddress(),
-            to: state
+        // Get the class table
+        let classTable = arguments[0].toTable()
+        let classTableValid = classTable.get(
+            LuaBoolean.self,
+            key: LuaLightUserdata(pointer: objectKey.getAddress())
         )
+        if classTableValid.toBool() != true {
+            Lua.error(state, data: "Expected NSAlert classTable in #1")
+        }
+
+        let alertTable = LuaTable.create(in: state)
         let sendableState = SendableLuaState.from(state)
         MainActor.assumeIsolated {
             let state = sendableState.take()
-            // Create the NSAlert instance
             let alert = NSAlert()
             let userdata = SwiftLuaReferenceBox(alert)
-            LuaUserdata.push(userdata.toLua(), to: state)
+            alertTable.set(
+                key: LuaLightUserdata(pointer: key.getAddress()),
+                to: userdata.toLua(in: state)
+            )
         }
-        LuaTable.setItem(in: state, at: -3)
+        alertTable.setMetaTable(classTable)
+        alertTable.push(to: state)
 
         return 1
     }
 
     private static func setMessageText(_ state: OpaquePointer?) -> Int32 {
         guard let state = LuaState.from(optional: state) else { return 0 }
+        assertMainThread(state)
 
-        // Ensure we are on the UI thread
-        if !Thread.isMainThread {
-            LuaString.push("NSAlert:setMessageText must be called on the main thread", to: state)
-            Lua.error(state)
-        }
-
-        // Get the first argument, which should be the alert table
-        guard LuaType.get(from: state, at: 1) == .table else {
-            LuaString.push("Expected table as first argument", to: state)
-            Lua.error(state)
-        }
-
-        // Get the second argument, which should be the message text
-        guard let messageText = LuaString.get(from: state, at: 2) else {
-            LuaString.push("Expected string as second argument", to: state)
-            Lua.error(state)
-        }
+        let arguments = SwiftLuaArgument.create(from: state, count: 2)
+        let alertTable = arguments[0].toTable()
+        let messageText = arguments[1].toString()
 
         let sendableState = SendableLuaState.from(state)
         MainActor.assumeIsolated {
             let state = sendableState.take()
-            // Get the userdata from the alert table
-            LuaLightUserdata.push(
-                key.getAddress(),
-                to: state
-            )
-            LuaTable.loadItem(from: state, at: 1)
-            let userdata = LuaUserdata.get(from: state, at: -1)
-            guard let box = SwiftLuaReferenceBox<NSAlert>.fromLua(userdata) else {
-                Lua.setTop(state, 0)
-                LuaString.push("Invalid userdata in alert table", to: state)
-                Lua.error(state)
+            guard let alert = getNSAlert(state, table: alertTable) else {
+                Lua.error(state, data: "Expected NSAlert in #1")
             }
-            Lua.pop(state, 1)
-            let alert = box.get()
             alert.messageText = messageText
         }
 
@@ -90,138 +77,126 @@ public enum LuaNSAlert {
 
     private static func setInformativeText(_ state: OpaquePointer?) -> Int32 {
         guard let state = LuaState.from(optional: state) else { return 0 }
+        assertMainThread(state)
 
-        // Assert main thread
-        if !Thread.isMainThread {
-            LuaString.push(
-                "NSAlert:setInformativeText must be called on the main thread",
-                to: state
-            )
-            Lua.error(state)
-        }
-
-        // Get the first argument, which should be the alert table
-        guard LuaType.get(from: state, at: 1) == .table else {
-            LuaString.push("Expected table as first argument", to: state)
-            Lua.error(state)
-        }
-
-        // Get the second argument, which should be the informative text
-        guard let informativeText = LuaString.get(from: state, at: 2) else {
-            LuaString.push("Expected string as second argument", to: state)
-            Lua.error(state)
-        }
+        let arguments = SwiftLuaArgument.create(from: state, count: 2)
+        let alertTable = arguments[0].toTable()
+        let messageText = arguments[1].toString()
 
         let sendableState = SendableLuaState.from(state)
         MainActor.assumeIsolated {
             let state = sendableState.take()
-            // Get the userdata from the alert table
-            LuaLightUserdata.push(
-                key.getAddress(),
-                to: state
-            )
-            LuaTable.loadItem(from: state, at: 1)
-            let userdata = LuaUserdata.get(from: state, at: -1)
-            Lua.pop(state, 1)
-            guard let box = SwiftLuaReferenceBox<NSAlert>.fromLua(userdata) else {
-                LuaString.push("Invalid userdata in alert table", to: state)
-                Lua.error(state)
+            guard let alert = getNSAlert(state, table: alertTable) else {
+                Lua.error(state, data: "Expected NSAlert in #1")
             }
-            let alert = box.get()
-            alert.informativeText = informativeText
+            alert.informativeText = messageText
         }
+
         return 0
     }
 
     private static func runModal(_ state: OpaquePointer?) -> Int32 {
         guard let state = LuaState.from(optional: state) else { return 0 }
+        assertMainThread(state)
 
-        // Assert main thread
-        if !Thread.isMainThread {
-            LuaString.push("NSAlert:runModal must be called on the main thread", to: state)
-            Lua.error(state)
-        }
-
-        // Get the first argument, which should be the alert table
-        guard LuaType.get(from: state, at: 1) == .table else {
-            LuaString.push("Expected table as first argument", to: state)
-            Lua.error(state)
-        }
+        let arguments = SwiftLuaArgument.create(from: state, count: 1)
+        let alertTable = arguments[0].toTable()
 
         let sendableState = SendableLuaState.from(state)
         let result = MainActor.assumeIsolated {
             let state = sendableState.take()
-            // Get the userdata from the alert table
-            LuaLightUserdata.push(
-                key.getAddress(),
-                to: state
-            )
-            LuaTable.loadItem(from: state, at: 1)
-            let userdata = LuaUserdata.get(from: state, at: -1)
-            Lua.pop(state, 1)
-            guard let box = SwiftLuaReferenceBox<NSAlert>.fromLua(userdata) else {
-                LuaString.push("Invalid userdata in alert table", to: state)
-                Lua.error(state)
+            guard let alert = getNSAlert(state, table: alertTable) else {
+                Lua.error(state, data: "Expected NSAlert in #1")
             }
-            let alert = box.get()
             return alert.runModal()
         }
 
-        LuaNumber.push(Int32(result.rawValue), to: state)
+        let number = LuaNumber.create(Int32(result.rawValue), in: state)
+        number.push(to: state)
         return 1
     }
 
+    // private static func runModal(_ state: OpaquePointer?) -> Int32 {
+    //     guard let state = LuaState.from(optional: state) else { return 0 }
+
+    //     // Assert main thread
+    //     if !Thread.isMainThread {
+    //         LuaString.push("NSAlert:runModal must be called on the main thread", to: state)
+    //         Lua.error(state)
+    //     }
+
+    //     // Get the first argument, which should be the alert table
+    //     guard LuaType.get(from: state, at: 1) == .table else {
+    //         LuaString.push("Expected table as first argument", to: state)
+    //         Lua.error(state)
+    //     }
+
+    //     let sendableState = SendableLuaState.from(state)
+    //     let result = MainActor.assumeIsolated {
+    //         let state = sendableState.take()
+    //         // Get the userdata from the alert table
+    //         LuaLightUserdata.push(
+    //             key.getAddress(),
+    //             to: state
+    //         )
+    //         LuaTable.loadItem(from: state, at: 1)
+    //         let userdata = LuaUserdata.get(from: state, at: -1)
+    //         Lua.pop(state, 1)
+    //         guard let box = SwiftLuaReferenceBox<NSAlert>.fromLua(userdata) else {
+    //             LuaString.push("Invalid userdata in alert table", to: state)
+    //             Lua.error(state)
+    //         }
+    //         let alert = box.get()
+    //         return alert.runModal()
+    //     }
+
+    //     LuaNumber.push(Int32(result.rawValue), to: state)
+    //     return 1
+    // }
+
     public static func register(in state: LuaState) -> Bool {
-        LuaTable.pushEmpty(to: state)
+        let table = LuaTable.create(in: state)
+        table.set(key: LuaLightUserdata(pointer: objectKey.getAddress()), to: true)
 
         // classTable["__index"] = classTable
-        LuaString.push("__index", to: state)
-        Lua.push(state, at: -2)  // push classTable again
-        LuaTable.setItem(in: state, at: -3)
+        table.set(key: "__index", to: table)
 
-        // classTable["new"] = function
-        LuaString.push("new", to: state)
-        LuaFunction.push(
-            .init(
+        // Add the functions
+        table.set(
+            key: "new",
+            to: LuaFunction.create(
                 debugName: "NSAlert:new",
-                function: { LuaNSAlert.new($0) }
-            ),
-            to: state
+                function: { LuaNSAlert.new($0) },
+                in: state
+            )
         )
-        LuaTable.setItem(in: state, at: -3)
-
-        // classTable["setMessageText"] = function
-        LuaString.push("setMessageText", to: state)
-        LuaFunction.push(
-            .init(
+        table.set(
+            key: "setMessageText",
+            to: LuaFunction.create(
                 debugName: "NSAlert:setMessageText",
-                function: { LuaNSAlert.setMessageText($0) }
-            ),
-            to: state
+                function: { LuaNSAlert.setMessageText($0) },
+                in: state
+            )
         )
-        LuaTable.setItem(in: state, at: -3)
-
-        // classTable["setInformativeText"] = function
-        LuaString.push("setInformativeText", to: state)
-        LuaFunction.push(
-            .init(
+        table.set(
+            key: "setInformativeText",
+            to: LuaFunction.create(
                 debugName: "NSAlert:setInformativeText",
-                function: { LuaNSAlert.setInformativeText($0) }
-            ),
-            to: state
+                function: { LuaNSAlert.setInformativeText($0) },
+                in: state
+            )
         )
-        LuaTable.setItem(in: state, at: -3)
-
-        // classTable["runModal"] = function
-        LuaString.push("runModal", to: state)
-        LuaFunction.push(
-            .init(
+        table.set(
+            key: "runModal",
+            to: LuaFunction.create(
                 debugName: "NSAlert:runModal",
-                function: { LuaNSAlert.runModal($0) }
-            ),
-            to: state
+                function: { LuaNSAlert.runModal($0) },
+                in: state
+            )
         )
-        LuaTable.setItem(in: state, at: -3)
+
+        // Push the table to the stack
+        table.push(to: state)
 
         return true
     }

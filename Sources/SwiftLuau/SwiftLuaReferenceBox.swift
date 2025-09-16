@@ -54,7 +54,7 @@ public struct SwiftLuaReferenceBox<T: AnyObject> {
 
     /// Convert the ReferenceBox to Lua userdata, transferring ownership to Lua.
     /// - Returns: A LuaUserdata containing the ReferenceBox.
-    public func toLua() -> LuaUserdata {
+    public func toLua(in state: LuaState) -> LuaUserdata {
         let bytes = toBytes()
         let deallocater: @convention(c) (UnsafeMutableRawPointer?) -> Void = { ptr in
             guard let ptr = ptr else { return }
@@ -69,7 +69,7 @@ public struct SwiftLuaReferenceBox<T: AnyObject> {
                 box.release()
             }
         }
-        let userdata = LuaUserdata(buffer: bytes, deallocater: deallocater)
+        let userdata = LuaUserdata.create(buffer: bytes, deallocater: deallocater, in: state)
         return userdata
     }
 

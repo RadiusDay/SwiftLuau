@@ -1,4 +1,4 @@
-import CoreFoundation
+import Foundation
 import SwiftLuauBindings
 
 /// A compiled Lua bytecode chunk.
@@ -44,5 +44,11 @@ public final class LuaBytecode {
         }
 
         return LuaBytecode(size: bytecodeSize, data: bytecodeData)
+    }
+
+    /// Get the bytecode as Data.
+    /// - Returns: The bytecode as Data.
+    public func toData() -> Data {
+        return Data(bytes: data, count: size)
     }
 }

@@ -1,42 +1,56 @@
 import SwiftLuauBindings
 
-/// Thread functions for Lua.
-public struct LuaThread: @unchecked Sendable {
-    public let thread: OpaquePointer
+/// A reference to a Lua thread.
+public struct LuaThread: Sendable, LuaPushable, LuaGettable {
+    /// The reference to the Lua thread.
+    public let reference: LuaRef
 
-    /// Initialize a LuaThread with an existing thread pointer.
-    /// - Parameter thread: The existing Lua thread pointer.
-    public init(thread: OpaquePointer) {
-        self.thread = thread
+    /// Initialize a LuaThread with a LuaRef.
+    /// - Parameter reference: The LuaRef to initialize the thread with.
+    public init(reference: LuaRef) {
+        self.reference = reference
     }
 
-    /// Create a new Lua thread.
+    /// Create a new Lua thread and return a LuaThread referencing it.
     /// - Parameter state: The Lua state to create the thread in.
-    /// - Returns: A new Lua thread.
+    /// - Returns: A LuaThread referencing the new thread.
     public static func create(in state: LuaState) -> LuaThread? {
-        guard let thread = lua_newthread(state.state) else {
+        if lua_newthread(state.state) == nil {
             return nil
         }
-        return LuaThread(thread: thread)
+        let ref = LuaRef.store(-1, in: state)
+        return LuaThread(reference: ref)
     }
 
-    /// Push a Lua thread onto the Lua stack.
-    /// - Parameters:
-    ///   - thread: The Lua thread to push.
-    ///   - state: The Lua state to push to.
-    public static func push(_ thread: LuaThread, to state: LuaState) {
-        lua_pushthread(thread.thread)
+    /// Push the Lua thread onto the Lua stack.
+    /// - Parameter state: The Lua state to push the thread to.
+    public func push(to state: LuaState) {
+        reference.push(to: state)
     }
 
-    /// Get a Lua thread from the Lua stack.
+    /// Get a Lua thread from the Lua stack at the given index.
     /// - Parameters:
-    ///   - index: The stack index to get the value from.
-    ///   - state: The Lua state to get the value from.
-    /// - Returns: The Lua thread if it exists and is a thread, nil otherwise.
+    ///   - state: The Lua state to get the thread from.
+    ///   - index: The stack index to get the thread from.
+    /// - Returns: A LuaThread if one exists at the given index, nil otherwise.
     public static func get(from state: LuaState, at index: Int32) -> LuaThread? {
-        guard let thread = lua_tothread(state.state, index) else {
+        if LuaType.get(from: state, at: index) != .thread {
             return nil
         }
-        return LuaThread(thread: thread)
+        let ref = LuaRef.store(-1, in: state)
+        return LuaThread(reference: ref)
+    }
+
+    /// Get the underlying Lua state of the thread.
+    /// - Returns: The LuaState of the thread.
+    public func getState() -> LuaState? {
+        let state = reference.state.take()
+        push(to: state)
+        guard let threadState = lua_tothread(state.state, -1) else {
+            Lua.pop(state, 1)
+            return nil
+        }
+        Lua.pop(state, 1)
+        return LuaState.from(threadState)
     }
 }

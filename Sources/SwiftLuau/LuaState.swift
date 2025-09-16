@@ -63,7 +63,7 @@ public final class LuaState {
     /// Get the error message from the top of the stack.
     /// - Returns: The error message, or nil if there is no error.
     private func getErrorMessage() -> String? {
-        return LuaString.get(from: self, at: -1)
+        return LuaString.get(from: self, at: -1).toStringConverting()
     }
 
     /// Load a chunk of Luau bytecode with the given name.
@@ -79,11 +79,10 @@ public final class LuaState {
         return .success(())
     }
 
-    /// Set a global variable in the Lua state.
-    /// - Parameters:
-    ///   - name: The name of the global variable.
-    ///   - value: The value to set the global variable to.
-    public func setGlobal(name: String) {
-        lua_setfield(state, Lua.globalsIndex, name)
+    /// Get the global table.
+    public func getGlobalTable() -> LuaTable? {
+        lua_getfield(state, Lua.globalsIndex, "_G")
+        let ref = LuaRef.store(-1, in: self)
+        return LuaTable(reference: ref)
     }
 }

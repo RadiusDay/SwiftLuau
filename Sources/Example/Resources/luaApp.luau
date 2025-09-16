@@ -12,8 +12,9 @@ function AppDelegate:applicationDidFinishLaunching()
     print("Application did finish launching")
     local alert = NSAlert:new()
     alert:setMessageText("Hello from Luau!")
-    alert:setInformativeText("This is a simple alert dialog.")
-    alert:runModal()
+    alert:setInformativeText("This is a simple alert from the Luau application.")
+    local result = alert:runModal()
+    print(`Alert result: {result}`)
 end
 
 function AppDelegate:applicationWillTerminate()
