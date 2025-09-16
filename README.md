@@ -18,7 +18,7 @@ Add the following to your `Package.swift`:
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/yourusername/SwiftLuau.git", from: "0.1.0")
+    .package(url: "https://github.com/yourusername/SwiftLuau.git", from: "0.2.0")
 ]
 ```
 
@@ -34,12 +34,11 @@ let source = """
 print("Hello from Luau!")
 """
 
-guard let bytecode = LuaBytecode.compile(source: luaAppSource) else {
+guard let bytecode = LuaBytecode.compile(source: source) else {
     fatalError("Failed to compile lua app")
 }
 
-// Load the bytecode into the Luau state
-let loadResult = state.load(chunkName: "luaApp", bytecode: bytecode)
+let loadResult = state.load(chunkName: "=source.luau", bytecode: bytecode)
 guard case .success = loadResult else {
     if case let .failure(error) = loadResult {
         fatalError("Failed to load lua app: \(error ?? "unknown error")")
@@ -48,15 +47,18 @@ guard case .success = loadResult else {
     }
 }
 
-// Call the loaded chunk
-let callResult = LuaFunction.protectedCall(from: state, nargs: 0, nresults: 1)
+let ref = LuaRef.store(-1, in: state)
+let function = LuaFunction(reference: ref)
+let callResult = function.protectedCall(arguments: [], nresults: 1)
 guard case .success = callResult else {
     if case let .failure(error) = callResult {
-        fatalError("Failed to run lua app: \(error)")
+        fatalError("Failed to run lua app: \(error ?? "unknown error")")
     } else {
         fatalError("Failed to run lua app: unknown error")
     }
 }
+
+print("Lua script executed successfully")
 ```
 
 ## Contributing
