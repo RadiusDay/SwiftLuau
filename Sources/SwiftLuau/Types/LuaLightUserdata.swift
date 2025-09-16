@@ -34,7 +34,7 @@ public struct LuaLightUserdata: @unchecked Sendable, Equatable, LuaPushable, Lua
         if LuaType.get(from: state, at: index) != .lightUserdata {
             return nil
         }
-        guard let pointer = lua_touserdatatagged(state.state, index, 0) else {
+        guard let pointer = lua_tolightuserdatatagged(state.state, index, 0) else {
             return nil
         }
         return LuaLightUserdata(pointer: pointer)
