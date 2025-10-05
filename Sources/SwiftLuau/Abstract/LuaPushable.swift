@@ -1,3 +1,5 @@
+import SwiftLuauBindings
+
 public protocol LuaPushable {
     /// Push the value onto the given Lua state.
     /// - Parameter state: The Lua state to push the value onto.
@@ -6,30 +8,31 @@ public protocol LuaPushable {
 
 extension String: LuaPushable {
     public func push(to state: LuaState) {
-        LuaString.create(self, in: state).push(to: state)
+        let bytes = [UInt8](self.utf8)
+        lua_pushlstring(state.state, bytes, bytes.count)
     }
 }
 
 extension Int32: LuaPushable {
     public func push(to state: LuaState) {
-        LuaNumber.create(self, in: state).push(to: state)
+        lua_pushinteger(state.state, self)
     }
 }
 
-extension Int: LuaPushable {
+extension UInt32: LuaPushable {
     public func push(to state: LuaState) {
-        LuaNumber.create(Int32(self), in: state).push(to: state)
+        lua_pushunsigned(state.state, self)
     }
 }
 
 extension Double: LuaPushable {
     public func push(to state: LuaState) {
-        LuaNumber.create(self, in: state).push(to: state)
+        lua_pushnumber(state.state, self)
     }
 }
 
 extension Bool: LuaPushable {
     public func push(to state: LuaState) {
-        LuaBoolean.create(self, in: state).push(to: state)
+        lua_pushboolean(state.state, self ? 1 : 0)
     }
 }

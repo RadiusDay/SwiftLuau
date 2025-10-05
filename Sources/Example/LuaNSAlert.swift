@@ -111,8 +111,7 @@ public enum LuaNSAlert {
             return alert.runModal()
         }
 
-        let number = LuaNumber.create(Int32(result.rawValue), in: state)
-        number.push(to: state)
+        Int32(result.rawValue).push(to: state)
         return 1
     }
 
