@@ -37,7 +37,7 @@ let package = Package(
             name: "Luau",
             targets: ["Luau"]
         ),
-        .executable(name: "Example", targets: []),
+        .executable(name: "Example", targets: ["Example"]),
     ],
     targets: [
         .target(
