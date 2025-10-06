@@ -28,7 +28,7 @@ dependencies: [
 ## Usage
 
 ```swift
-import SwiftLuau
+import Luau
 
 guard let state = LuaState.create() else {
     fatalError("Failed to create Luau state")

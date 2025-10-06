@@ -15,7 +15,6 @@ let cppFlags: [CXXSetting] = [
     .headerSearchPath("../VM/include"),
 
     // C++ standard
-    .unsafeFlags(["-std=c++17"]),
     .define("LUA_USE_LONGJMP", to: "1"),
     .define("LUA_API", to: "extern \"C\""),
     .define("LUACODE_API", to: "extern \"C\""),
@@ -102,5 +101,6 @@ let package = Package(
                 .copy("Resources/luaApp.luau")
             ]
         ),
-    ]
+    ],
+    cxxLanguageStandard: .cxx17
 )
