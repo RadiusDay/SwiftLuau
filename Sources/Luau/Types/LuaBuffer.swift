@@ -71,7 +71,7 @@ public struct LuaBuffer: LuaPushable, LuaGettable {
 
     /// Get the byte array of a Lua buffer.
     /// - Returns: The byte array if it exists and is a buffer, nil otherwise.
-    public func toBuffer() -> [UInt8]? {
+    public func toBytes() -> [UInt8]? {
         push(to: reference.state)
         var size: size_t = 0
         guard let ptr = lua_tobuffer(reference.state.state, -1, &size) else {

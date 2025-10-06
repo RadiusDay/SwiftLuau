@@ -26,6 +26,25 @@ public final class LuaBytecode {
         data.deallocate()
     }
 
+    /// Create a LuaBytecode from a byte array.
+    /// - Parameter bytes: The byte array to create the LuaBytecode from.
+    /// - Returns: A LuaBytecode.
+    public static func from(bytes: [UInt8]) -> LuaBytecode {
+        let data = UnsafeMutablePointer<UInt8>.allocate(capacity: bytes.count)
+        data.initialize(from: bytes, count: bytes.count)
+        return LuaBytecode(size: bytes.count, data: data)
+    }
+
+    #if canImport(Foundation)
+    /// Create a LuaBytecode from Data.
+    /// - Parameter data: The Data to create the LuaBytecode from.
+    /// - Returns: A LuaBytecode.
+    public static func from(data: Data) -> LuaBytecode {
+        let byteArray = [UInt8](data)
+        return LuaBytecode.from(bytes: byteArray)
+    }
+    #endif
+
     /// Compile Lua source code into bytecode.
     /// - Parameter source: The Lua source code to compile.
     /// - Returns: A LuaBytecode if compilation was successful, nil otherwise.
@@ -53,7 +72,7 @@ public final class LuaBytecode {
     }
 
     /// Get the bytecode as a byte array.
-    public func toData() -> [UInt8] {
+    public func toBytes() -> [UInt8] {
         return .init(UnsafeBufferPointer(start: data, count: size))
     }
 
