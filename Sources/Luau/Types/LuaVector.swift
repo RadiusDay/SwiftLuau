@@ -1,7 +1,7 @@
 import CLua
 
 /// A 3D vector type for Lua. Along with related functions.
-public struct LuaVector: Sendable, LuaPushable, LuaGettable {
+public struct LuaVector: LuaPushable, LuaGettable {
     /// A 3D vector type.
     public struct Vector: Sendable, Equatable, Hashable, Codable {
         public var x: Float
@@ -57,14 +57,13 @@ public struct LuaVector: Sendable, LuaPushable, LuaGettable {
     /// Get the Vector value.
     /// - Returns: The Vector value if it exists and is a vector, nil otherwise.
     public func toVector() -> Vector? {
-        let state = reference.state.take()
-        push(to: state)
-        guard let ptr = lua_tovector(state.state, -1) else {
-            Lua.pop(state, 1)
+        push(to: reference.state)
+        guard let ptr = lua_tovector(reference.state.state, -1) else {
+            Lua.pop(reference.state, 1)
             return nil
         }
         let vector = Vector(x: ptr[0], y: ptr[1], z: ptr[2])
-        Lua.pop(state, 1)
+        Lua.pop(reference.state, 1)
         return vector
     }
 }

@@ -1,7 +1,7 @@
-import Foundation
+import Luau
 
 /// A box that holds a reference to a Swift object, allowing it to be passed to Lua as userdata.
-public struct SwiftLuaReferenceBox<T: AnyObject> {
+public struct RefBox<T: AnyObject> {
     /// The retained pointer to the Swift object.
     public let pointer: UnsafeRawPointer
 
@@ -22,10 +22,10 @@ public struct SwiftLuaReferenceBox<T: AnyObject> {
     /// Reconstruct a ReferenceBox from raw bytes.
     /// - Parameter bytes: The raw bytes representing the pointer.
     /// - Returns: A ReferenceBox if the bytes are valid, otherwise nil.
-    public static func fromBytes(_ bytes: [UInt8]) -> SwiftLuaReferenceBox<T>? {
+    public static func fromBytes(_ bytes: [UInt8]) -> RefBox<T>? {
         guard bytes.count == MemoryLayout<UnsafeRawPointer>.size else { return nil }
         let ptr = bytes.withUnsafeBytes { $0.load(as: UnsafeRawPointer.self) }
-        return SwiftLuaReferenceBox<T>(retainedPointer: ptr)
+        return RefBox<T>(retainedPointer: ptr)
     }
 
     /// Get the object without changing its reference count.
@@ -65,7 +65,7 @@ public struct SwiftLuaReferenceBox<T: AnyObject> {
                 count: MemoryLayout<UnsafeRawPointer>.size
             )
             let bytes = Array(byteBuffer)
-            if let box = SwiftLuaReferenceBox<AnyObject>.fromBytes(bytes) {
+            if let box = RefBox<AnyObject>.fromBytes(bytes) {
                 box.release()
             }
         }
@@ -76,7 +76,7 @@ public struct SwiftLuaReferenceBox<T: AnyObject> {
     /// From Lua userdata.
     /// - Parameter userdata: The LuaUserdata to extract the ReferenceBox from.
     /// - Returns: A ReferenceBox if the userdata is valid, otherwise nil.
-    public static func fromLua(_ userdata: UnsafeMutableRawPointer?) -> SwiftLuaReferenceBox<T>? {
+    public static func fromLua(_ userdata: UnsafeMutableRawPointer?) -> RefBox<T>? {
         guard let userdata = userdata else { return nil }
 
         // Get the bytes back from the pointer
@@ -85,6 +85,6 @@ public struct SwiftLuaReferenceBox<T: AnyObject> {
             count: MemoryLayout<UnsafeRawPointer>.size
         )
         let bytes = Array(byteBuffer)
-        return SwiftLuaReferenceBox<T>.fromBytes(bytes)
+        return RefBox<T>.fromBytes(bytes)
     }
 }

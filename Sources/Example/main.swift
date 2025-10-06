@@ -15,7 +15,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         if let function = function {
             let result = function.protectedCall(arguments: [], nresults: 0)
             if case let .failure(error) = result {
-                print("Error calling applicationDidFinishLaunching: \(error ?? "unknown error")")
+                print(
+                    "Error calling applicationDidFinishLaunching: \(error.message ?? "unknown error")"
+                )
             }
         }
     }
@@ -25,7 +27,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         if let function = function {
             let result = function.protectedCall(arguments: [], nresults: 0)
             if case let .failure(error) = result {
-                print("Error calling applicationWillTerminate: \(error ?? "unknown error")")
+                print("Error calling applicationWillTerminate: \(error.message ?? "unknown error")")
             }
         }
     }
@@ -39,7 +41,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             let result = function.protectedCall(arguments: [], nresults: 1)
             if case let .failure(error) = result {
                 print(
-                    "Error calling applicationShouldTerminateAfterLastWindowClosed: \(error ?? "unknown error")"
+                    "Error calling applicationShouldTerminateAfterLastWindowClosed: \(error.message ?? "unknown error")"
                 )
                 return false
             }
@@ -61,7 +63,7 @@ private final class LuaImports: Sendable {
 private func lua_import(_ state: OpaquePointer?) -> Int32 {
     guard let state = LuaState.from(optional: state) else { return 0 }
 
-    let arguments = SwiftLuaArgument.create(from: state, count: 1)
+    let arguments = LuaArgumentHandler.create(from: state, count: 1)
     let moduleName = arguments[0].toString()
 
     if let importFunction = LuaImports.shared.importTable[moduleName] {
@@ -79,7 +81,7 @@ private func lua_import(_ state: OpaquePointer?) -> Int32 {
 private func lua_print(_ state: OpaquePointer?) -> Int32 {
     guard let state = LuaState.from(optional: state) else { return 0 }
 
-    let args = SwiftLuaArgument.create(from: state, count: -1)
+    let args = LuaArgumentHandler.create(from: state, count: -1)
     print("[Lua] ", terminator: "")
     var first = true
     for arg in args {
@@ -125,7 +127,7 @@ guard let bytecode = LuaBytecode.compile(source: luaAppSource) else {
 let loadResult = state.load(chunkName: "=luaApp.luau", bytecode: bytecode)
 guard case .success = loadResult else {
     if case let .failure(error) = loadResult {
-        fatalError("Failed to load lua app: \(error ?? "unknown error")")
+        fatalError("Failed to load lua app: \(error.message ?? "unknown error")")
     } else {
         fatalError("Failed to load lua app: unknown error")
     }
@@ -137,7 +139,7 @@ let callResult = function.protectedCall(arguments: [], nresults: 1)
 // Get the returned value, which should be a table
 guard case .success = callResult else {
     if case let .failure(error) = callResult {
-        fatalError("Failed to run lua app: \(error ?? "unknown error")")
+        fatalError("Failed to run lua app: \(error.message ?? "unknown error")")
     } else {
         fatalError("Failed to run lua app: unknown error")
     }

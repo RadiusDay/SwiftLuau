@@ -3,6 +3,18 @@ import CLua
 /// A Luau state.
 /// This is a thin wrapper around `OpaquePointer` to ensure proper memory management.
 public final class LuaState {
+    public struct LoadFailure: Error {
+        public let message: String?
+
+        internal init(message: String?) {
+            self.message = message
+        }
+
+        public var localizedDescription: String {
+            return message ?? "Unknown error"
+        }
+    }
+
     /// The underlying Luau state pointer.
     public private(set) var state: OpaquePointer
     /// Whether this state owns the Luau state and should free it on deinit.
@@ -62,8 +74,8 @@ public final class LuaState {
 
     /// Get the error message from the top of the stack.
     /// - Returns: The error message, or nil if there is no error.
-    private func getErrorMessage() -> String? {
-        return LuaString.get(from: self, at: -1).toStringConverting()
+    private func getErrorMessage() -> LoadFailure {
+        return LoadFailure(message: LuaString.get(from: self, at: -1).toStringConverting())
     }
 
     /// Load a chunk of Luau bytecode with the given name.
@@ -71,7 +83,7 @@ public final class LuaState {
     ///   - chunkName: The name of the chunk.
     ///   - bytecode: The Luau bytecode to load.
     /// - Returns: A result indicating success or failure.
-    public func load(chunkName: String, bytecode: LuaBytecode) -> SwiftLuaResult<Void, String?> {
+    public func load(chunkName: String, bytecode: LuaBytecode) -> Result<Void, LoadFailure> {
         let result = luau_load(state, chunkName, bytecode.data, bytecode.size, 0)
         if result != LUA_OK.rawValue {
             return .failure(getErrorMessage())

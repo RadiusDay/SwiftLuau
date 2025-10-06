@@ -1,7 +1,19 @@
 import CLua
 
 /// Representation of a Lua function.
-public struct LuaFunction: Sendable, LuaPushable, LuaGettable {
+public struct LuaFunction: LuaPushable, LuaGettable {
+    public struct Exception: Error {
+        public let message: String?
+
+        internal init(message: String?) {
+            self.message = message
+        }
+
+        public var localizedDescription: String {
+            return message ?? "Unknown error"
+        }
+    }
+
     /// The reference to the Lua function.
     public let reference: LuaRef
 
@@ -56,31 +68,30 @@ public struct LuaFunction: Sendable, LuaPushable, LuaGettable {
         arguments: [LuaPushable],
         nresults: Int32,
         errorHandler: LuaFunction? = nil,
-    ) -> SwiftLuaResult<(), String?> {
-        let state = reference.state.take()
+    ) -> Result<(), Exception> {
         let nargs = Int32(arguments.count)
         var errFuncIndex: Int32 = 0
 
         if let errorHandler = errorHandler {
-            errorHandler.push(to: state)
+            errorHandler.push(to: reference.state)
             // After pushing error handler, it will be at -(nargs + 1) after all pushes
             errFuncIndex = -(nargs + 1)
         }
 
         // Push the function to call
-        push(to: state)
+        push(to: reference.state)
         // Push arguments
         for argument in arguments {
-            argument.push(to: state)
+            argument.push(to: reference.state)
         }
 
-        let result = lua_pcall(state.state, nargs, nresults, errFuncIndex)
+        let result = lua_pcall(reference.state.state, nargs, nresults, errFuncIndex)
         if result == LUA_OK.rawValue {
             return .success(())
         } else {
-            let errorMessage = LuaString.get(from: state, at: -1)
-            Lua.pop(state, 1)
-            return .failure(errorMessage.toStringConverting())
+            let errorMessage = LuaString.get(from: reference.state, at: -1)
+            Lua.pop(reference.state, 1)
+            return .failure(Exception(message: errorMessage.toStringConverting()))
         }
     }
 }

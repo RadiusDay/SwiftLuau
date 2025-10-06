@@ -1,7 +1,7 @@
 import CLua
 
 /// Lua types.
-public enum LuaType: Sendable {
+public enum LuaType {
     public enum LuaTypeData: Int32, Sendable, Hashable, Equatable, CaseIterable {
         case nilType = 0
 

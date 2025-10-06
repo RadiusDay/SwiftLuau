@@ -1,7 +1,7 @@
 import CLua
 
 /// Representation of a Lua light userdata.
-public struct LuaLightUserdata: @unchecked Sendable, Equatable, LuaPushable, LuaGettable {
+public struct LuaLightUserdata: Equatable, LuaPushable, LuaGettable {
     /// The pointer wrapped by the light userdata.
     public let pointer: UnsafeMutableRawPointer
 

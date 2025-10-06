@@ -4,12 +4,12 @@ import CLua
 ///
 /// Having an active `LuaRef` makes Lua not garbage collect the referenced value.
 /// When the `LuaRef` is deinitialized, the reference is removed from the registry.
-public final class LuaRef: Sendable, LuaPushable {
-    public let state: SendableLuaState
+public final class LuaRef: LuaPushable {
+    public let state: LuaState
     public let ref: Int32
 
     deinit {
-        lua_unref(state.value, ref)
+        lua_unref(state.state, ref)
     }
 
     /// Private initializer.
@@ -17,7 +17,7 @@ public final class LuaRef: Sendable, LuaPushable {
     ///   - state: The Lua state.
     ///   - ref: The reference.
     private init(state: LuaState, ref: Int32) {
-        self.state = SendableLuaState.from(state)
+        self.state = state
         self.ref = ref
     }
 
@@ -38,7 +38,7 @@ public final class LuaRef: Sendable, LuaPushable {
 
     /// Push the referenced value onto the stack.
     public func push(to state: LuaState) {
-        assert(self.state.value == state.state, "LuaState mismatch")
+        assert(self.state.state == state.state, "LuaState mismatch")
         lua_rawgeti(state.state, Lua.registryIndex, ref)
     }
 }

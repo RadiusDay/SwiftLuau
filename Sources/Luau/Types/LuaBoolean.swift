@@ -1,7 +1,7 @@
 import CLua
 
 /// Representation of a Lua boolean value.
-public struct LuaBoolean: Sendable, LuaPushable, LuaGettableNonOptional {
+public struct LuaBoolean: LuaPushable, LuaGettableNonOptional {
     /// The reference to the Lua boolean.
     public let reference: LuaRef
 
@@ -41,24 +41,22 @@ public struct LuaBoolean: Sendable, LuaPushable, LuaGettableNonOptional {
     /// Convert the Lua boolean to a Swift boolean.
     /// - Returns: The Swift boolean value.
     public func toBool() -> Bool? {
-        let state = reference.state.take()
-        push(to: state)
-        if LuaType.get(from: state, at: -1) != .boolean {
-            Lua.pop(state, 1)
+        push(to: reference.state)
+        if LuaType.get(from: reference.state, at: -1) != .boolean {
+            Lua.pop(reference.state, 1)
             return nil
         }
-        let boolValue = lua_toboolean(state.state, -1) != 0
-        Lua.pop(state, 1)
+        let boolValue = lua_toboolean(reference.state.state, -1) != 0
+        Lua.pop(reference.state, 1)
         return boolValue
     }
 
     /// Convert the Lua boolean to a Swift boolean, converting the value if necessary.
     /// - Returns: The Swift boolean value.
     public func toBoolConverting() -> Bool {
-        let state = reference.state.take()
-        push(to: state)
-        let boolValue = lua_toboolean(state.state, -1) != 0
-        Lua.pop(state, 1)
+        push(to: reference.state)
+        let boolValue = lua_toboolean(reference.state.state, -1) != 0
+        Lua.pop(reference.state, 1)
         return boolValue
     }
 }

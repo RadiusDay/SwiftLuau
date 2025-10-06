@@ -1,7 +1,7 @@
 import CLua
 
 /// A reference to a Lua thread.
-public struct LuaThread: Sendable, LuaPushable, LuaGettable {
+public struct LuaThread: LuaPushable, LuaGettable {
     /// The reference to the Lua thread.
     public let reference: LuaRef
 
@@ -44,13 +44,12 @@ public struct LuaThread: Sendable, LuaPushable, LuaGettable {
     /// Get the underlying Lua state of the thread.
     /// - Returns: The LuaState of the thread.
     public func getState() -> LuaState? {
-        let state = reference.state.take()
-        push(to: state)
-        guard let threadState = lua_tothread(state.state, -1) else {
-            Lua.pop(state, 1)
+        push(to: reference.state)
+        guard let threadState = lua_tothread(reference.state.state, -1) else {
+            Lua.pop(reference.state, 1)
             return nil
         }
-        Lua.pop(state, 1)
+        Lua.pop(reference.state, 1)
         return LuaState.from(threadState)
     }
 }

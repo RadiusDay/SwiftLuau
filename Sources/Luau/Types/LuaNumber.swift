@@ -1,7 +1,7 @@
 import CLua
 
 /// Representation of a Lua number.
-public struct LuaNumber: Sendable, LuaPushable, LuaGettable {
+public struct LuaNumber: LuaPushable, LuaGettable {
     /// A reference to the Lua state.
     public let reference: LuaRef
 
@@ -47,10 +47,9 @@ public struct LuaNumber: Sendable, LuaPushable, LuaGettable {
     /// Get the Double value of the Lua number.
     /// - Returns: The Double value if it exists and is a number, nil otherwise.
     public func toDouble() -> Double {
-        let state = reference.state.take()
-        push(to: state)
-        let data = lua_tonumberx(state.state, -1, nil)
-        Lua.pop(state, 1)
+        push(to: reference.state)
+        let data = lua_tonumberx(reference.state.state, -1, nil)
+        Lua.pop(reference.state, 1)
         return data
     }
 

@@ -1,5 +1,8 @@
 import CLua
+
+#if canImport(Foundation)
 import Foundation
+#endif
 
 /// A compiled Lua bytecode chunk.
 /// Note: Compiled bytecode doesn't mean that it is free of syntax errors.
@@ -7,13 +10,13 @@ public final class LuaBytecode {
     /// The size of the bytecode in bytes.
     internal let size: size_t
     /// The raw bytecode data.
-    internal let data: UnsafeMutablePointer<CChar>
+    internal let data: UnsafeMutablePointer<UInt8>
 
     /// Create a LuaBytecode from size and data.
     /// - Parameters:
     ///   - size: The size of the bytecode in bytes.
     ///   - data: The raw bytecode data.
-    private init(size: size_t, data: UnsafeMutablePointer<CChar>) {
+    private init(size: size_t, data: UnsafeMutablePointer<UInt8>) {
         self.size = size
         self.data = data
     }
@@ -43,12 +46,22 @@ public final class LuaBytecode {
             return nil
         }
 
-        return LuaBytecode(size: bytecodeSize, data: bytecodeData)
+        return LuaBytecode(
+            size: bytecodeSize,
+            data: UnsafeMutableRawPointer(bytecodeData).assumingMemoryBound(to: UInt8.self)
+        )
     }
 
+    /// Get the bytecode as a byte array.
+    public func toData() -> [UInt8] {
+        return .init(UnsafeBufferPointer(start: data, count: size))
+    }
+
+    #if canImport(Foundation)
     /// Get the bytecode as Data.
     /// - Returns: The bytecode as Data.
     public func toData() -> Data {
         return Data(bytes: data, count: size)
     }
+    #endif
 }

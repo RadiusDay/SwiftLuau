@@ -25,17 +25,19 @@ let cppFlags: [CXXSetting] = [
 let package = Package(
     name: "Luau",
     platforms: [
-        .macOS(.v15)
+        .macOS(.v12),
+        .macCatalyst(.v13),
+        .iOS(.v16),
+        .tvOS(.v16),
+        .watchOS(.v10),
+        .visionOS(.v1),
     ],
     products: [
         .library(
             name: "Luau",
             targets: ["Luau"]
         ),
-        .executable(
-            name: "Example",
-            targets: ["Example"]
-        ),
+        .executable(name: "Example", targets: []),
     ],
     targets: [
         .target(

@@ -1,5 +1,5 @@
 /// Utility class to handle Lua function arguments.
-public final class SwiftLuaArgument {
+public final class LuaArgumentHandler {
     /// Argument index.
     public let index: Int32
     /// The Lua reference.
@@ -16,16 +16,18 @@ public final class SwiftLuaArgument {
     ///   - state: The Lua state.
     ///   - argumentCount: The number of arguments to retrieve. Use -1 to get all.
     /// - Returns: An array of SwiftLuaArgument instances.
-    public static func create(from state: LuaState, count argumentCount: Int) -> [SwiftLuaArgument]
-    {
-        var args: [SwiftLuaArgument] = []
+    public static func create(
+        from state: LuaState,
+        count argumentCount: Int
+    ) -> [LuaArgumentHandler] {
+        var args: [LuaArgumentHandler] = []
         let argCount = Lua.getTop(state)
         if argumentCount != -1 && argCount < argumentCount {
             Lua.error(state, data: "Expected at least \(argumentCount) arguments, got \(argCount)")
         }
         for i in 1...argCount {
             let ref = LuaRef.store(i, in: state, remove: false)
-            args.append(SwiftLuaArgument(i, reference: ref))
+            args.append(LuaArgumentHandler(i, reference: ref))
         }
         Lua.pop(state, argCount)
         return args
@@ -42,7 +44,7 @@ public final class SwiftLuaArgument {
     /// - Returns: The Bool value.
     public func toBool() -> Bool {
         guard let bool = LuaBoolean(reference: reference).toBool() else {
-            Lua.error(reference.state.take(), data: "Expected boolean at argument #\(index)")
+            Lua.error(reference.state, data: "Expected boolean at argument #\(index)")
         }
         return bool
     }
@@ -50,52 +52,48 @@ public final class SwiftLuaArgument {
     /// Convert the argument to a LuaBuffer.
     /// - Returns: The LuaBuffer.
     public func toBuffer() -> LuaBuffer {
-        let state = reference.state.take()
-        reference.push(to: state)
-        if LuaType.get(from: state, at: -1) != .buffer {
-            Lua.error(state, data: "Expected buffer at argument #\(index)")
+        reference.push(to: reference.state)
+        if LuaType.get(from: reference.state, at: -1) != .buffer {
+            Lua.error(reference.state, data: "Expected buffer at argument #\(index)")
         }
         let buffer = LuaBuffer(reference: reference)
-        Lua.pop(state, 1)
+        Lua.pop(reference.state, 1)
         return buffer
     }
 
     /// Convert the argument to function.
     /// - Returns: The LuaFunction.
     public func toFunction() -> LuaFunction {
-        let state = reference.state.take()
-        reference.push(to: state)
-        if LuaType.get(from: state, at: -1) != .function {
-            Lua.error(state, data: "Expected function at argument #\(index)")
+        reference.push(to: reference.state)
+        if LuaType.get(from: reference.state, at: -1) != .function {
+            Lua.error(reference.state, data: "Expected function at argument #\(index)")
         }
         let function = LuaFunction(reference: reference)
-        Lua.pop(state, 1)
+        Lua.pop(reference.state, 1)
         return function
     }
 
     /// Convert the argument to light user data.
     /// - Returns: The light user data.
     public func toLightUserData() -> LuaLightUserdata {
-        let state = reference.state.take()
-        reference.push(to: state)
-        let lightUserdata = LuaLightUserdata.get(from: state, at: -1)
+        reference.push(to: reference.state)
+        let lightUserdata = LuaLightUserdata.get(from: reference.state, at: -1)
         guard let lightUserdata else {
-            Lua.error(state, data: "Expected light user data at argument #\(index)")
+            Lua.error(reference.state, data: "Expected light user data at argument #\(index)")
         }
-        Lua.pop(state, 1)
+        Lua.pop(reference.state, 1)
         return lightUserdata
     }
 
     /// Convert the argument to nil.
     /// - Returns: The LuaNil.
     public func toNil() -> LuaNil {
-        let state = reference.state.take()
-        reference.push(to: state)
-        if LuaType.get(from: state, at: -1) != .nilType {
-            Lua.pop(state, 1)
-            Lua.error(state, data: "Expected nil at argument #\(index)")
+        reference.push(to: reference.state)
+        if LuaType.get(from: reference.state, at: -1) != .nilType {
+            Lua.pop(reference.state, 1)
+            Lua.error(reference.state, data: "Expected nil at argument #\(index)")
         }
-        Lua.pop(state, 1)
+        Lua.pop(reference.state, 1)
         let nilValue = LuaNil()
         return nilValue
     }
@@ -103,14 +101,13 @@ public final class SwiftLuaArgument {
     /// Convert the argument to number.
     /// - Returns: The LuaNumber.
     public func toNumber() -> LuaNumber {
-        let state = reference.state.take()
-        reference.push(to: state)
-        if LuaType.get(from: state, at: -1) != .number {
-            Lua.pop(state, 1)
-            Lua.error(state, data: "Expected number at argument #\(index)")
+        reference.push(to: reference.state)
+        if LuaType.get(from: reference.state, at: -1) != .number {
+            Lua.pop(reference.state, 1)
+            Lua.error(reference.state, data: "Expected number at argument #\(index)")
         }
         let number = LuaNumber(reference: reference)
-        Lua.pop(state, 1)
+        Lua.pop(reference.state, 1)
         return number
     }
 
@@ -120,7 +117,7 @@ public final class SwiftLuaArgument {
         let string = LuaString(reference: reference)
         guard let stringValue = string.toStringConverting() else {
             Lua.error(
-                reference.state.take(),
+                reference.state,
                 data: "String conversion failed at argument #\(index)"
             )
         }
@@ -132,7 +129,7 @@ public final class SwiftLuaArgument {
     public func toString() -> String {
         let string = LuaString(reference: reference)
         guard let stringValue = string.toString() else {
-            Lua.error(reference.state.take(), data: "Expected string at argument #\(index)")
+            Lua.error(reference.state, data: "Expected string at argument #\(index)")
         }
         return stringValue
     }
@@ -147,56 +144,52 @@ public final class SwiftLuaArgument {
     /// Convert the argument to table.
     /// - Returns: The LuaTable.
     public func toTable() -> LuaTable {
-        let state = reference.state.take()
-        reference.push(to: state)
-        if LuaType.get(from: state, at: -1) != .table {
-            Lua.pop(state, 1)
-            Lua.error(state, data: "Expected table at argument #\(index)")
+        reference.push(to: reference.state)
+        if LuaType.get(from: reference.state, at: -1) != .table {
+            Lua.pop(reference.state, 1)
+            Lua.error(reference.state, data: "Expected table at argument #\(index)")
         }
         let table = LuaTable(reference: reference)
-        Lua.pop(state, 1)
+        Lua.pop(reference.state, 1)
         return table
     }
 
     /// Convert the argument to thread.
     /// - Returns: The LuaThread.
     public func toThread() -> LuaThread {
-        let state = reference.state.take()
-        reference.push(to: state)
-        if LuaType.get(from: state, at: -1) != .thread {
-            Lua.pop(state, 1)
-            Lua.error(state, data: "Expected thread at argument #\(index)")
+        reference.push(to: reference.state)
+        if LuaType.get(from: reference.state, at: -1) != .thread {
+            Lua.pop(reference.state, 1)
+            Lua.error(reference.state, data: "Expected thread at argument #\(index)")
         }
         let thread = LuaThread(reference: reference)
-        Lua.pop(state, 1)
+        Lua.pop(reference.state, 1)
         return thread
     }
 
     /// Convert the argument to user data.
     /// - Returns: The LuaUserdata.
     public func toUserdata() -> LuaUserdata {
-        let state = reference.state.take()
-        reference.push(to: state)
-        if LuaType.get(from: state, at: -1) != .userdata {
-            Lua.pop(state, 1)
-            Lua.error(state, data: "Expected userdata at argument #\(index)")
+        reference.push(to: reference.state)
+        if LuaType.get(from: reference.state, at: -1) != .userdata {
+            Lua.pop(reference.state, 1)
+            Lua.error(reference.state, data: "Expected userdata at argument #\(index)")
         }
         let userdata = LuaUserdata(reference: reference)
-        Lua.pop(state, 1)
+        Lua.pop(reference.state, 1)
         return userdata
     }
 
     /// Convert the argument to vector.
     /// - Returns: The LuaVector.
     public func toVector() -> LuaVector {
-        let state = reference.state.take()
-        reference.push(to: state)
-        if LuaType.get(from: state, at: -1) != .vector {
-            Lua.pop(state, 1)
-            Lua.error(state, data: "Expected vector at argument #\(index)")
+        reference.push(to: reference.state)
+        if LuaType.get(from: reference.state, at: -1) != .vector {
+            Lua.pop(reference.state, 1)
+            Lua.error(reference.state, data: "Expected vector at argument #\(index)")
         }
         let vector = LuaVector(reference: reference)
-        Lua.pop(state, 1)
+        Lua.pop(reference.state, 1)
         return vector
     }
 }

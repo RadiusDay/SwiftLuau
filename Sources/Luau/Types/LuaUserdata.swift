@@ -1,8 +1,7 @@
 import CLua
-import CoreFoundation
 
 /// Functions related to Lua userdata.
-public struct LuaUserdata: Sendable, LuaPushable, LuaGettable {
+public struct LuaUserdata: LuaPushable, LuaGettable {
     public let reference: LuaRef
 
     /// Create a LuaUserdata from a LuaRef.
@@ -55,14 +54,13 @@ public struct LuaUserdata: Sendable, LuaPushable, LuaGettable {
     /// Get the raw pointer to the userdata.
     /// - Returns: The raw pointer to the userdata if it exists, nil otherwise.
     public func toPointer() -> UnsafeMutableRawPointer? {
-        let state = reference.state.take()
-        push(to: state)
-        if LuaType.get(from: state, at: -1) != .userdata {
-            Lua.pop(state, 1)
+        push(to: reference.state)
+        if LuaType.get(from: reference.state, at: -1) != .userdata {
+            Lua.pop(reference.state, 1)
             return nil
         }
-        let userdata = lua_touserdata(state.state, -1)
-        Lua.pop(state, 1)
+        let userdata = lua_touserdata(reference.state.state, -1)
+        Lua.pop(reference.state, 1)
         return userdata
     }
 }

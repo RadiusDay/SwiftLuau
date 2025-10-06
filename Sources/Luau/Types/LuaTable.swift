@@ -1,7 +1,7 @@
 import CLua
 
 /// Table functions for Lua.
-public struct LuaTable: Sendable, LuaPushable, LuaGettable {
+public struct LuaTable: LuaPushable, LuaGettable {
     /// The reference to the Lua table.
     public let reference: LuaRef
 
@@ -44,24 +44,22 @@ public struct LuaTable: Sendable, LuaPushable, LuaGettable {
     ///   - metaTable: The meta table to set.
     ///   - state: The Lua state to operate in.
     public func setMetaTable(_ metaTable: LuaTable) {
-        let state = reference.state.take()
-        push(to: state)
-        metaTable.push(to: state)
-        lua_setmetatable(state.state, -2)
-        Lua.pop(state, 1)
+        push(to: reference.state)
+        metaTable.push(to: reference.state)
+        lua_setmetatable(reference.state.state, -2)
+        Lua.pop(reference.state, 1)
     }
 
     /// Get the meta table of the Lua table.
     /// - Parameter state: The Lua state to operate in.
     /// - Returns: The meta table if it exists, nil otherwise.
     public func getMetaTable() -> LuaTable? {
-        let state = reference.state.take()
-        push(to: state)
-        if lua_getmetatable(state.state, -1) == 0 {
-            Lua.pop(state, 1)
+        push(to: reference.state)
+        if lua_getmetatable(reference.state.state, -1) == 0 {
+            Lua.pop(reference.state, 1)
             return nil
         }
-        let ref = LuaRef.store(-1, in: state)
+        let ref = LuaRef.store(-1, in: reference.state)
         return LuaTable(reference: ref)
     }
 
@@ -72,12 +70,11 @@ public struct LuaTable: Sendable, LuaPushable, LuaGettable {
     ///   - state: The Lua state to operate in.
     /// - Returns: The value at the given key, or nil if it doesn't exist.
     public func get<Type: LuaGettable>(_ type: Type.Type, key: LuaPushable) -> Type? {
-        let state = reference.state.take()
-        push(to: state)
-        key.push(to: state)
-        lua_gettable(state.state, -2)
-        let value = Type.get(from: state, at: -1)
-        Lua.pop(state, 1)
+        push(to: reference.state)
+        key.push(to: reference.state)
+        lua_gettable(reference.state.state, -2)
+        let value = Type.get(from: reference.state, at: -1)
+        Lua.pop(reference.state, 1)
         return value
     }
 
@@ -88,12 +85,11 @@ public struct LuaTable: Sendable, LuaPushable, LuaGettable {
     ///   - state: The Lua state to operate in.
     /// - Returns: The value at the given key, or nil if it doesn't exist.
     public func get<Type: LuaGettableNonOptional>(_ type: Type.Type, key: LuaPushable) -> Type {
-        let state = reference.state.take()
-        push(to: state)
-        key.push(to: state)
-        lua_gettable(state.state, -2)
-        let value = Type.get(from: state, at: -1)
-        Lua.pop(state, 1)
+        push(to: reference.state)
+        key.push(to: reference.state)
+        lua_gettable(reference.state.state, -2)
+        let value = Type.get(from: reference.state, at: -1)
+        Lua.pop(reference.state, 1)
         return value
     }
 
@@ -102,11 +98,10 @@ public struct LuaTable: Sendable, LuaPushable, LuaGettable {
     ///   - key: The key to set the value for.
     ///   - value: The value to set.
     public func set(key: LuaPushable, to value: LuaPushable) {
-        let state = reference.state.take()
-        push(to: state)
-        key.push(to: state)
-        value.push(to: state)
-        lua_settable(state.state, -3)
-        Lua.pop(state, 1)
+        push(to: reference.state)
+        key.push(to: reference.state)
+        value.push(to: reference.state)
+        lua_settable(reference.state.state, -3)
+        Lua.pop(reference.state, 1)
     }
 }

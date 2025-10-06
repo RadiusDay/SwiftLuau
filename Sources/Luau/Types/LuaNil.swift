@@ -1,7 +1,7 @@
 import CLua
 
 /// Representation of a Lua nil value.
-public struct LuaNil: Sendable, LuaPushable, LuaGettable {
+public struct LuaNil: LuaPushable, LuaGettable {
     public func push(to state: LuaState) {
         lua_pushnil(state.state)
     }

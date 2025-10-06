@@ -1,8 +1,7 @@
 import CLua
-import Foundation
 
 /// String functions for Lua.
-public struct LuaString: Sendable, LuaPushable, LuaGettableNonOptional {
+public struct LuaString: LuaPushable, LuaGettableNonOptional {
     public let reference: LuaRef
 
     /// Initialize a LuaString with a LuaRef.
@@ -42,34 +41,42 @@ public struct LuaString: Sendable, LuaPushable, LuaGettableNonOptional {
     /// Get the swift string value of the Lua string.
     /// - Returns: The swift string if it exists and is a string, nil otherwise.
     public func toString() -> String? {
-        let state = reference.state.take()
-        push(to: state)
-        if LuaType.get(from: state, at: -1) != .string {
-            Lua.pop(state, 1)
+        push(to: reference.state)
+        if LuaType.get(from: reference.state, at: -1) != .string {
+            Lua.pop(reference.state, 1)
             return nil
         }
         var length: size_t = 0
-        guard let chars = lua_tolstring(state.state, -1, &length) else {
-            Lua.pop(state, 1)
+        guard let chars = lua_tolstring(reference.state.state, -1, &length) else {
+            Lua.pop(reference.state, 1)
             return nil
         }
-        Lua.pop(state, 1)
-        let data = Data(bytes: chars, count: length)
-        return String(data: data, encoding: .utf8)
+        Lua.pop(reference.state, 1)
+        return String(
+            bytes: UnsafeBufferPointer(
+                start: UnsafeMutableRawPointer(mutating: chars).assumingMemoryBound(to: UInt8.self),
+                count: Int(length)
+            ),
+            encoding: .utf8
+        )
     }
 
     /// Get the swift string value of the Lua string, converting the value to a string if necessary.
     /// - Returns: The string if it exists or can be converted to a string, nil otherwise.
     public func toStringConverting() -> String? {
-        let state = reference.state.take()
-        push(to: state)
+        push(to: reference.state)
         var length: size_t = 0
-        guard let chars = luaL_tolstring(state.state, -1, &length) else {
-            Lua.pop(state, 1)
+        guard let chars = luaL_tolstring(reference.state.state, -1, &length) else {
+            Lua.pop(reference.state, 1)
             return nil
         }
-        Lua.pop(state, 1)
-        let data = Data(bytes: chars, count: length)
-        return String(data: data, encoding: .utf8)
+        Lua.pop(reference.state, 1)
+        return String(
+            bytes: UnsafeBufferPointer(
+                start: UnsafeMutableRawPointer(mutating: chars).assumingMemoryBound(to: UInt8.self),
+                count: Int(length)
+            ),
+            encoding: .utf8
+        )
     }
 }
