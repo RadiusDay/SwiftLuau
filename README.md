@@ -21,7 +21,7 @@ Add the following to your `Package.swift`:
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/RadiusDay/SwiftLuau.git", from: "0.2.0")
+    .package(url: "https://github.com/RadiusDay/SwiftLuau.git", from: "0.3.1")
 ]
 ```
 
@@ -44,7 +44,7 @@ guard let bytecode = LuaBytecode.compile(source: source) else {
 let loadResult = state.load(chunkName: "=source.luau", bytecode: bytecode)
 guard case .success = loadResult else {
     if case let .failure(error) = loadResult {
-        fatalError("Failed to load lua app: \(error ?? "unknown error")")
+        fatalError("Failed to load lua app: \(error.message ?? "unknown error")")
     } else {
         fatalError("Failed to load lua app: unknown error")
     }
@@ -55,7 +55,7 @@ let function = LuaFunction(reference: ref)
 let callResult = function.protectedCall(arguments: [], nresults: 1)
 guard case .success = callResult else {
     if case let .failure(error) = callResult {
-        fatalError("Failed to run lua app: \(error ?? "unknown error")")
+        fatalError("Failed to run lua app: \(error.message ?? "unknown error")")
     } else {
         fatalError("Failed to run lua app: unknown error")
     }
