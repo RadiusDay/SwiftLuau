@@ -1,4 +1,4 @@
-import SwiftLuauBindings
+import CLua
 
 /// A 3D vector type for Lua. Along with related functions.
 public struct LuaVector: Sendable, LuaPushable, LuaGettable {

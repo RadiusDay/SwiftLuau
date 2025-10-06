@@ -1,4 +1,4 @@
-import SwiftLuauBindings
+import CLua
 
 /// Representation of a Lua light userdata.
 public struct LuaLightUserdata: @unchecked Sendable, Equatable, LuaPushable, LuaGettable {

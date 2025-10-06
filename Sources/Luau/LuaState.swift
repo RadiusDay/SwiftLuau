@@ -1,4 +1,4 @@
-import SwiftLuauBindings
+import CLua
 
 /// A Luau state.
 /// This is a thin wrapper around `OpaquePointer` to ensure proper memory management.

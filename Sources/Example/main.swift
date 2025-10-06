@@ -1,5 +1,5 @@
 import AppKit
-import SwiftLuau
+import Luau
 
 class AppDelegate: NSObject, NSApplicationDelegate {
     var state: LuaState

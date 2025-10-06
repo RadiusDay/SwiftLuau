@@ -1,4 +1,4 @@
-import SwiftLuauBindings
+import CLua
 
 /// Representation of a Lua function.
 public struct LuaFunction: Sendable, LuaPushable, LuaGettable {

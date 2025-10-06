@@ -1,4 +1,4 @@
-import SwiftLuauBindings
+import CLua
 
 /// Representation of a Lua number.
 public struct LuaNumber: Sendable, LuaPushable, LuaGettable {

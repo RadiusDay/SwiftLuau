@@ -1,5 +1,5 @@
+import CLua
 import Foundation
-import SwiftLuauBindings
 
 /// A compiled Lua bytecode chunk.
 /// Note: Compiled bytecode doesn't mean that it is free of syntax errors.

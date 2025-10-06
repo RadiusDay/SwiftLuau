@@ -1,4 +1,4 @@
-import SwiftLuauBindings
+import CLua
 
 /// Representation of a Lua nil value.
 public struct LuaNil: Sendable, LuaPushable, LuaGettable {

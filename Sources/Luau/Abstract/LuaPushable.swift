@@ -1,4 +1,4 @@
-import SwiftLuauBindings
+import CLua
 
 public protocol LuaPushable {
     /// Push the value onto the given Lua state.

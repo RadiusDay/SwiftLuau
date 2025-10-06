@@ -1,4 +1,4 @@
-import SwiftLuauBindings
+import CLua
 
 /// A reference to a Lua value stored in the registry.
 ///

@@ -1,5 +1,5 @@
+import CLua
 import CoreFoundation
-import SwiftLuauBindings
 
 /// Functions related to Lua userdata.
 public struct LuaUserdata: Sendable, LuaPushable, LuaGettable {

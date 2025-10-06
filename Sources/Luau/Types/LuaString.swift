@@ -1,5 +1,5 @@
+import CLua
 import Foundation
-import SwiftLuauBindings
 
 /// String functions for Lua.
 public struct LuaString: Sendable, LuaPushable, LuaGettableNonOptional {

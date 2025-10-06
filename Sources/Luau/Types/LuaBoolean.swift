@@ -1,4 +1,4 @@
-import SwiftLuauBindings
+import CLua
 
 /// Representation of a Lua boolean value.
 public struct LuaBoolean: Sendable, LuaPushable, LuaGettableNonOptional {

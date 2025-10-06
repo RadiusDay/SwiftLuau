@@ -1,4 +1,4 @@
-import SwiftLuauBindings
+import CLua
 
 /// Lua types.
 public enum LuaType: Sendable {

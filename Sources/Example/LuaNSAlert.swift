@@ -1,5 +1,5 @@
 import AppKit
-import SwiftLuau
+import Luau
 
 public enum LuaNSAlert {
     public static let objectKey = Tag()

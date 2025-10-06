@@ -1,4 +1,4 @@
-import SwiftLuauBindings
+import CLua
 
 /// Table functions for Lua.
 public struct LuaTable: Sendable, LuaPushable, LuaGettable {

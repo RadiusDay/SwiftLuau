@@ -1,4 +1,4 @@
 version: 1
 builder:
   configs:
-    - documentation_targets: [SwiftLuau]
+    - documentation_targets: [Luau]

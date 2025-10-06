@@ -1,5 +1,5 @@
+import CLua
 import Foundation
-import SwiftLuauBindings
 
 /// Representation of a Lua buffer.
 public struct LuaBuffer: @unchecked Sendable, LuaPushable, LuaGettable {

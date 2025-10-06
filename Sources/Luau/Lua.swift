@@ -1,4 +1,4 @@
-import SwiftLuauBindings
+import CLua
 
 /// Constants and functions related to the Lua C API.
 public enum Lua {
