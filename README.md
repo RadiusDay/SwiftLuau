@@ -21,7 +21,7 @@ Add the following to your `Package.swift`:
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/yourusername/SwiftLuau.git", from: "0.2.0")
+    .package(url: "https://github.com/RadiusDay/SwiftLuau.git", from: "0.2.0")
 ]
 ```
 
