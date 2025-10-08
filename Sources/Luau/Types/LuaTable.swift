@@ -93,6 +93,7 @@ public struct LuaTable: LuaPushable, LuaGettable {
         return value
     }
 
+    #if !hasFeature(Embedded)
     /// Set a value in the Lua table by key.
     /// - Parameters:
     ///   - key: The key to set the value for.
@@ -104,4 +105,29 @@ public struct LuaTable: LuaPushable, LuaGettable {
         lua_settable(reference.state.state, -3)
         Lua.pop(reference.state, 1)
     }
+    #else
+    /// Set a value in the Lua table by key.
+    /// - Parameters:
+    ///   - key: The key to set the value for.
+    ///   - value: The value to set.
+    public func set(key: LuaDynPushable, to value: LuaDynPushable) {
+        push(to: reference.state)
+        key.push(to: reference.state)
+        value.push(to: reference.state)
+        lua_settable(reference.state.state, -3)
+        Lua.pop(reference.state, 1)
+    }
+
+    /// Set a value in the Lua table by key.
+    /// - Parameters:
+    ///   - key: The key to set the value for.
+    ///   - value: The value to set.
+    public func set<Key: LuaPushable, Value: LuaPushable>(key: Key, to value: Value) {
+        push(to: reference.state)
+        key.push(to: reference.state)
+        value.push(to: reference.state)
+        lua_settable(reference.state.state, -3)
+        Lua.pop(reference.state, 1)
+    }
+    #endif
 }

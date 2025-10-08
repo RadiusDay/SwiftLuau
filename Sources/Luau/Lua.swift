@@ -33,8 +33,20 @@ public enum Lua {
         lua_remove(state.state, index)
     }
 
+    #if !hasFeature(Embedded)
     public static func error(_ state: LuaState, data: LuaPushable?) -> Never {
         data?.push(to: state)
         lua_error(state.state)
     }
+    #else
+    public static func error(_ state: LuaState, data: LuaDynPushable?) -> Never {
+        data?.push(to: state)
+        lua_error(state.state)
+    }
+
+    public static func error<T: LuaPushable>(_ state: LuaState, data: T) -> Never {
+        data.push(to: state)
+        lua_error(state.state)
+    }
+    #endif
 }
