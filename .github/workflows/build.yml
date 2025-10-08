@@ -19,3 +19,5 @@ jobs:
                   xcode-version: "16.3"
             - name: "Build"
               run: "swift build --configuration release"
+            - name: "Build (xcode)"
+              run: "swift build --configuration release --build-system xcode"
