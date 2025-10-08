@@ -40,8 +40,16 @@ public final class LuaBytecode {
     /// - Parameter data: The Data to create the LuaBytecode from.
     /// - Returns: A LuaBytecode.
     public static func from(data: Data) -> LuaBytecode {
-        let byteArray = [UInt8](data)
-        return LuaBytecode.from(bytes: byteArray)
+        let bytecode = data.withUnsafeBytes { ptr -> LuaBytecode in
+            let count = ptr.count
+            let data = UnsafeMutablePointer<UInt8>.allocate(capacity: count)
+            guard let baseAddress = ptr.baseAddress else {
+                fatalError("Failed to get base address of Data")
+            }
+            data.initialize(from: baseAddress.assumingMemoryBound(to: UInt8.self), count: count)
+            return LuaBytecode(size: count, data: data)
+        }
+        return bytecode
     }
     #endif
 
