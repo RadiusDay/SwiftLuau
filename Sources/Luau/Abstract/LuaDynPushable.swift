@@ -11,7 +11,7 @@ public struct LuaDynPushable {
         )
     }
 
-    func push(to state: LuaState) {
+    public func push(to state: LuaState) {
         functionPointers.push(state)
     }
 }
