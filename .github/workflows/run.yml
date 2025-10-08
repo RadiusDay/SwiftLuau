@@ -25,12 +25,26 @@ jobs:
               run: "swift --version"
             - name: "Run"
               run: "swift run --configuration release --build-system ${{ matrix.build-system }}"
-    other:
-        strategy:
-            matrix:
-                os: [{ name: "windows", runs-on: "windows-latest" }, { name: "linux (ubuntu)", runs-on: "ubuntu-latest" }]
-        name: "${{ matrix.os.name }}"
-        runs-on: "${{ matrix.os.runs-on }}"
+    linux:
+        name: "ubuntu"
+        runs-on: "ubuntu-latest"
+        steps:
+            - name: "Checkout"
+              uses: "actions/checkout@v4"
+              with:
+                  submodules: true
+            - uses: SwiftyLab/setup-swift@latest
+            - name: "Log Swift version"
+              run: "swift --version"
+            - name: "Install requirements"
+              run: |
+                  sudo apt-get update
+                  sudo apt-get install -y libc++-dev libc++abi-dev
+            - name: "Run"
+              run: "swift run --configuration release"
+    windows:
+        name: "windows"
+        runs-on: "windows-latest"
         steps:
             - name: "Checkout"
               uses: "actions/checkout@v4"
