@@ -1,4 +1,4 @@
-#include "include/lua.h"
-#include "include/lualib.h"
-#include "include/luaconf.h"
-#include "include/luacode.h"
+#include "lua.h"
+#include "lualib.h"
+#include "luaconf.h"
+#include "luacode.h"

@@ -3,22 +3,14 @@
 
 import PackageDescription
 
-let cppFlags: [CXXSetting] = [
-    // Include paths
-    .headerSearchPath("../Analysis/include"),
-    .headerSearchPath("../Ast/include"),
-    .headerSearchPath("../CodeGen/include"),
-    .headerSearchPath("../Common/include"),
-    .headerSearchPath("../Compiler/include"),
-    .headerSearchPath("../Config/include"),
-    .headerSearchPath("../EqSat/include"),
-    .headerSearchPath("../VM/include"),
-
-    // C++ standard
+let cppDefines: [CXXSetting] = [
     .define("LUA_USE_LONGJMP", to: "1"),
     .define("LUA_API", to: "extern \"C\""),
     .define("LUACODE_API", to: "extern \"C\""),
     .define("LUACODEGEN_API", to: "extern \"C\""),
+]
+let linkerSettings: [LinkerSetting] = [
+    .linkedLibrary("c++")
 ]
 
 let package = Package(
@@ -40,50 +32,74 @@ let package = Package(
     targets: [
         .target(
             name: "CLuaAnalysis",
+            dependencies: ["CLuaAst", "CLuaEqSat", "CLuaConfig", "CLuaCompiler", "CLuaVM"],
             path: "lib/Luau/Analysis",
-            cxxSettings: cppFlags
+            cxxSettings: cppDefines,
+            linkerSettings: linkerSettings
         ),
         .target(
             name: "CLuaAst",
+            dependencies: ["CLuaCommon"],
             path: "lib/Luau/Ast",
-            cxxSettings: cppFlags
+            cxxSettings: cppDefines,
+            linkerSettings: linkerSettings
         ),
         .target(
             name: "CLuaCodeGen",
+            dependencies: ["CLuaVM", "CLuaVMInternal", "CLuaCommon"],
             path: "lib/Luau/CodeGen",
-            cxxSettings: cppFlags + [.headerSearchPath("../VM/src")]
+            cxxSettings: cppDefines,
+            linkerSettings: linkerSettings
+        ),
+        .target(
+            name: "CLuaCommon",
+            cxxSettings: cppDefines,
+            linkerSettings: linkerSettings
         ),
         .target(
             name: "CLuaCompiler",
+            dependencies: ["CLuaAst"],
             path: "lib/Luau/Compiler",
-            cxxSettings: cppFlags
+            cxxSettings: cppDefines,
+            linkerSettings: linkerSettings
         ),
         .target(
             name: "CLuaConfig",
+            dependencies: ["CLuaAst"],
             path: "lib/Luau/Config",
-            cxxSettings: cppFlags
+            cxxSettings: cppDefines,
+            linkerSettings: linkerSettings
         ),
         .target(
             name: "CLuaEqSat",
+            dependencies: ["CLuaCommon"],
             path: "lib/Luau/EqSat",
-            cxxSettings: cppFlags
+            cxxSettings: cppDefines,
+            linkerSettings: linkerSettings
         ),
         .target(
             name: "CLuaVM",
+            dependencies: ["CLuaCommon"],
             path: "lib/Luau/VM",
-            cxxSettings: cppFlags
+            cxxSettings: cppDefines,
+            linkerSettings: linkerSettings
+        ),
+        .target(
+            name: "CLuaVMInternal",
+            dependencies: ["CLuaCommon", "CLuaVM"],
+            path: "lib/Luau/VM",
+            sources: [],
+            publicHeadersPath: "src",
+            cxxSettings: cppDefines,
+            linkerSettings: linkerSettings
         ),
         .target(
             name: "CLua",
             dependencies: [
-                "CLuaAnalysis",
                 "CLuaAst",
-                "CLuaCodeGen",
                 "CLuaCompiler",
-                "CLuaConfig",
-                "CLuaEqSat",
                 "CLuaVM",
-            ],
+            ]
         ),
         .target(
             name: "Luau",
@@ -95,10 +111,7 @@ let package = Package(
         ),
         .executableTarget(
             name: "Example",
-            dependencies: ["Luau"],
-            resources: [
-                .copy("Resources/luaApp.luau")
-            ]
+            dependencies: ["Luau"]
         ),
     ],
     cxxLanguageStandard: .cxx17
