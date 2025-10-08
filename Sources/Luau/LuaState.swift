@@ -82,15 +82,23 @@ public final class LuaState {
     /// - Parameters:
     ///   - chunkName: The name of the chunk.
     ///   - bytecode: The Luau bytecode to load.
-    /// - Returns: A result indicating success or failure.
-    public func load(chunkName: String, bytecode: LuaBytecode) -> Result<Void, LoadFailure> {
+    /// - Returns: The loaded function if successful, or a LoadFailure if there was an error.
+    public func load(chunkName: String, bytecode: LuaBytecode) -> Result<LuaFunction, LoadFailure> {
         let result = luau_load(state, chunkName, bytecode.data, bytecode.size, 0)
         if result != LUA_OK.rawValue {
             return .failure(getErrorMessage())
         }
-        return .success(())
+        let function = LuaFunction.get(from: self, at: -1)
+        if let function = function {
+            return .success(function)
+        } else {
+            return .failure(
+                LoadFailure(message: "Failed to get function from stack after loading bytecode")
+            )
+        }
     }
 
+    #if !hasFeature(Embedded)
     /// Set a global variable in the Lua state.
     /// - Parameters:
     ///   - key: The name of the global variable.
@@ -102,6 +110,31 @@ public final class LuaState {
         value.push(to: self)
         lua_setfield(state, Lua.globalsIndex, key)
     }
+    #else
+    /// Set a global variable in the Lua state.
+    /// - Parameters:
+    ///   - key: The name of the global variable.
+    ///   - value: The value to set the global variable to.
+    public func setGlobal(
+        key: String,
+        to value: LuaDynPushable
+    ) {
+        value.push(to: self)
+        lua_setfield(state, Lua.globalsIndex, key)
+    }
+
+    /// Set a global variable in the Lua state.
+    /// - Parameters:
+    ///   - key: The name of the global variable.
+    ///   - value: The value to set the global variable to.
+    public func setGlobal<Type: LuaPushable>(
+        key: String,
+        to value: Type
+    ) {
+        value.push(to: self)
+        lua_setfield(state, Lua.globalsIndex, key)
+    }
+    #endif
 
     /// Get a global variable from the Lua state.
     /// - Parameter key: The name of the global variable.

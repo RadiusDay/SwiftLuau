@@ -57,18 +57,39 @@ public struct LuaFunction: LuaPushable, LuaGettable {
         return LuaFunction(reference: ref)
     }
 
+    private func parseReturnValues(
+        from state: LuaState,
+        count expectedCount: Int32?,
+    ) -> Result<[LuaValue], Exception> {
+        let valueCount = Lua.getTop(state)  // Number of items on the stack
+        if let expectedCount, expectedCount != valueCount {
+            return .failure(
+                Exception(message: "Expected \(expectedCount) return values, got \(valueCount)")
+            )
+        }
+
+        var values: [LuaValue] = []
+        for i in 0..<valueCount {
+            let ref = LuaRef.store(i + 1, in: state, remove: false)
+            values.append(LuaValue(i + 1, reference: ref))
+        }
+        Lua.pop(state, valueCount)
+        return .success(values)
+    }
+
+    #if !hasFeature(Embedded)
     /// Perform a protected call to a Lua function.
     /// - Parameters:
-    ///   - nargs: The number of arguments to pass to the function.
-    ///   - nresults: The number of results expected from the function.
+    ///   - arguments: The arguments to pass to the function.
+    ///   - returnCount: The number of return values expected. If nil, all return values are returned.
     ///   - errorHandler: An optional stack index of an error handler function.
     /// - Returns: A SwiftLuaResult indicating success or failure.
     @discardableResult
     public func protectedCall(
         arguments: [LuaPushable],
-        nresults: Int32,
+        returnCount: Int32? = nil,
         errorHandler: LuaFunction? = nil,
-    ) -> Result<(), Exception> {
+    ) -> Result<[LuaValue], Exception> {
         let nargs = Int32(arguments.count)
         var errFuncIndex: Int32 = 0
 
@@ -85,13 +106,62 @@ public struct LuaFunction: LuaPushable, LuaGettable {
             argument.push(to: reference.state)
         }
 
-        let result = lua_pcall(reference.state.state, nargs, nresults, errFuncIndex)
+        let result = lua_pcall(
+            reference.state.state,
+            nargs,
+            returnCount ?? LUA_MULTRET,
+            errFuncIndex
+        )
         if result == LUA_OK.rawValue {
-            return .success(())
+            let returnValues = parseReturnValues(from: reference.state, count: returnCount)
+            return returnValues
         } else {
             let errorMessage = LuaString.get(from: reference.state, at: -1)
-            Lua.pop(reference.state, 1)
             return .failure(Exception(message: errorMessage.toStringConverting()))
         }
     }
+    #else
+    /// Perform a protected call to a Lua function.
+    /// - Parameters:
+    ///   - arguments: The arguments to pass to the function.
+    ///   - returnCount: The number of return values expected. If nil, all return values are returned.
+    ///   - errorHandler: An optional stack index of an error handler function.
+    /// - Returns: A SwiftLuaResult indicating success or failure.
+    @discardableResult
+    public func protectedCall(
+        arguments: [LuaDynPushable],
+        returnCount: Int32? = nil,
+        errorHandler: LuaFunction? = nil,
+    ) -> Result<[LuaValue], Exception> {
+        let nargs = Int32(arguments.count)
+        var errFuncIndex: Int32 = 0
+
+        if let errorHandler = errorHandler {
+            errorHandler.push(to: reference.state)
+            // After pushing error handler, it will be at -(nargs + 1) after all pushes
+            errFuncIndex = -(nargs + 1)
+        }
+
+        // Push the function to call
+        push(to: reference.state)
+        // Push arguments
+        for argument in arguments {
+            argument.push(to: reference.state)
+        }
+
+        let result = lua_pcall(
+            reference.state.state,
+            nargs,
+            returnCount ?? LUA_MULTRET,
+            errFuncIndex
+        )
+        if result == LUA_OK.rawValue {
+            let returnValues = parseReturnValues(from: reference.state, count: returnCount)
+            return returnValues
+        } else {
+            let errorMessage = LuaString.get(from: reference.state, at: -1)
+            return .failure(Exception(message: errorMessage.toStringConverting()))
+        }
+    }
+    #endif
 }

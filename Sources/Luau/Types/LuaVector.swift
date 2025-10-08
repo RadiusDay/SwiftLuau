@@ -3,7 +3,7 @@ import CLua
 /// A 3D vector type for Lua. Along with related functions.
 public struct LuaVector: LuaPushable, LuaGettable {
     /// A 3D vector type.
-    public struct Vector: Sendable, Equatable, Hashable, Codable {
+    public struct Vector: Sendable, Equatable, Hashable {
         public var x: Float
         public var y: Float
         public var z: Float

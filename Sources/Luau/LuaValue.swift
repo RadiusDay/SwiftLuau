@@ -1,33 +1,33 @@
 /// Utility class to handle Lua function arguments.
-public final class LuaArgumentHandler {
+public final class LuaValue {
     /// Argument index.
     public let index: Int32
     /// The Lua reference.
     public let reference: LuaRef
 
     /// Private initializer.
-    private init(_ index: Int32, reference: LuaRef) {
+    internal init(_ index: Int32, reference: LuaRef) {
         self.index = index
         self.reference = reference
     }
 
-    /// Create a SwiftLuaArguments from the Lua stack.
+    /// Parse arguments from the Lua stack.
     /// - Parameters:
     ///   - state: The Lua state.
     ///   - argumentCount: The number of arguments to retrieve. Use -1 to get all.
-    /// - Returns: An array of SwiftLuaArgument instances.
-    public static func create(
+    /// - Returns: An array of LuaValue representing the arguments.
+    public static func parseArgs(
         from state: LuaState,
         count argumentCount: Int
-    ) -> [LuaArgumentHandler] {
-        var args: [LuaArgumentHandler] = []
+    ) -> [LuaValue] {
+        var args: [LuaValue] = []
         let argCount = Lua.getTop(state)
         if argumentCount != -1 && argCount < argumentCount {
             Lua.error(state, data: "Expected at least \(argumentCount) arguments, got \(argCount)")
         }
-        for i in 1...argCount {
-            let ref = LuaRef.store(i, in: state, remove: false)
-            args.append(LuaArgumentHandler(i, reference: ref))
+        for i in 0..<argCount {
+            let ref = LuaRef.store(i + 1, in: state, remove: false)
+            args.append(LuaValue(i + 1, reference: ref))
         }
         Lua.pop(state, argCount)
         return args
