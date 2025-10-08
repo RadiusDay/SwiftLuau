@@ -52,6 +52,15 @@ public struct LuaString: LuaPushable, LuaGettableNonOptional {
             return nil
         }
         Lua.pop(reference.state, 1)
+        #if hasFeature(Embedded)
+        return String(
+            validating: UnsafeBufferPointer(
+                start: UnsafeMutableRawPointer(mutating: chars).assumingMemoryBound(to: UInt8.self),
+                count: Int(length)
+            ),
+            as: UTF8.self
+        )
+        #else
         return String(
             bytes: UnsafeBufferPointer(
                 start: UnsafeMutableRawPointer(mutating: chars).assumingMemoryBound(to: UInt8.self),
@@ -59,6 +68,7 @@ public struct LuaString: LuaPushable, LuaGettableNonOptional {
             ),
             encoding: .utf8
         )
+        #endif
     }
 
     /// Get the swift string value of the Lua string, converting the value to a string if necessary.
@@ -71,6 +81,15 @@ public struct LuaString: LuaPushable, LuaGettableNonOptional {
             return nil
         }
         Lua.pop(reference.state, 1)
+        #if hasFeature(Embedded)
+        return String(
+            validating: UnsafeBufferPointer(
+                start: UnsafeMutableRawPointer(mutating: chars).assumingMemoryBound(to: UInt8.self),
+                count: Int(length)
+            ),
+            as: UTF8.self
+        )
+        #else
         return String(
             bytes: UnsafeBufferPointer(
                 start: UnsafeMutableRawPointer(mutating: chars).assumingMemoryBound(to: UInt8.self),
@@ -78,5 +97,6 @@ public struct LuaString: LuaPushable, LuaGettableNonOptional {
             ),
             encoding: .utf8
         )
+        #endif
     }
 }
