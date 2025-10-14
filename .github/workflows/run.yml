@@ -50,8 +50,11 @@ jobs:
               uses: "actions/checkout@v4"
               with:
                   submodules: true
+            - uses: ilammy/msvc-dev-cmd@v1
             - uses: SwiftyLab/setup-swift@latest
             - name: "Log Swift version"
               run: "swift --version"
+            - name: "Build"
+              run: "swift build --configuration release"
             - name: "Run"
               run: "swift run --configuration release"

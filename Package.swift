@@ -10,7 +10,13 @@ let cppDefines: [CXXSetting] = [
     .define("LUACODEGEN_API", to: "extern \"C\""),
 ]
 let linkerSettings: [LinkerSetting] = [
-    .linkedLibrary("c++")
+    .linkedLibrary(
+        "c++",
+        .when(platforms: [
+            .android, .driverKit, .iOS, .linux, .macCatalyst, .macOS, .openbsd, .tvOS, .visionOS,
+            .wasi, .watchOS,
+        ])
+    )
 ]
 
 let package = Package(
@@ -104,10 +110,7 @@ let package = Package(
         .target(
             name: "Luau",
             dependencies: ["CLua"],
-            publicHeadersPath: "include",
-            linkerSettings: [
-                .linkedLibrary("c++")
-            ]
+            publicHeadersPath: "include"
         ),
         .executableTarget(
             name: "Example",
