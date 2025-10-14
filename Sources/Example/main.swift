@@ -49,7 +49,8 @@ private func lua_print(_ state: OpaquePointer?) -> Int32 {
 
 func main() {
     guard let state = LuaState.create() else {
-        fatalError("Failed to create Luau state")
+        print("Failed to create Lua state")
+        fatalError()
     }
 
     state.setGlobal(
@@ -78,26 +79,29 @@ func main() {
         """
 
     guard let bytecode = LuaBytecode.compile(source: luaAppSource) else {
-        fatalError("Failed to compile lua app")
+        print("Failed to compile lua app")
+        fatalError()
     }
 
     let loadResult = state.load(chunkName: "=luaApp.luau", bytecode: bytecode)
     guard case .success(let function) = loadResult else {
         if case let .failure(error) = loadResult {
-            fatalError("Failed to load lua app: \(error.message ?? "unknown error")")
+            print("Failed to load lua app: \(error.message ?? "unknown error")")
         } else {
-            fatalError("Failed to load lua app: unknown error")
+            print("Failed to load lua app: unknown error")
         }
+        fatalError()
     }
 
     let callResult = function.protectedCall(arguments: [])
     // Get the returned value, which should be a table
     guard case .success(let returnValues) = callResult else {
         if case let .failure(error) = callResult {
-            fatalError("Failed to run lua app: \(error.message ?? "unknown error")")
+            print("Failed to run lua app: \(error.message ?? "unknown error")")
         } else {
-            fatalError("Failed to run lua app: unknown error")
+            print("Failed to run lua app: unknown error")
         }
+        fatalError()
     }
 
     print(
