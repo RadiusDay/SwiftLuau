@@ -57,4 +57,5 @@ jobs:
             - name: "Build"
               run: "swift build --configuration release"
             - name: "Run"
-              run: "swift run --configuration release"
+              run: "swift run --configuration release --verbose"
+              shell: "powershell"
