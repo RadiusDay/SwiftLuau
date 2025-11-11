@@ -72,7 +72,7 @@ let package = Package(
         ),
         .target(
             name: "CLuaConfig",
-            dependencies: ["CLuaAst", "CLuaCompiler"],
+            dependencies: ["CLuaAst", "CLuaCompiler", "CLuaVM"],
             path: "lib/Luau/Config",
             cxxSettings: cppDefines,
             linkerSettings: linkerSettings
