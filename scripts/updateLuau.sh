@@ -13,8 +13,6 @@ LATEST_TAG=$(git describe --tags `git rev-list --tags --max-count=1`)
 echo "Updating Luau to latest tag: $LATEST_TAG"
 git checkout "$LATEST_TAG"
 
-$DIR/fixSymlinks.sh
-
 cd "$CWD" || exit
 
 exit 0
