@@ -38,7 +38,7 @@ let package = Package(
     targets: [
         .target(
             name: "CLuaAnalysis",
-            dependencies: ["CLuaAst", "CLuaEqSat", "CLuaConfig", "CLuaCompiler", "CLuaVM"],
+            dependencies: ["CLuaAst", "CLuaConfig", "CLuaCompiler", "CLuaVM"],
             path: "lib/Luau/Analysis",
             cxxSettings: cppDefines,
             linkerSettings: linkerSettings
@@ -74,13 +74,6 @@ let package = Package(
             name: "CLuaConfig",
             dependencies: ["CLuaAst", "CLuaCompiler", "CLuaVM"],
             path: "lib/Luau/Config",
-            cxxSettings: cppDefines,
-            linkerSettings: linkerSettings
-        ),
-        .target(
-            name: "CLuaEqSat",
-            dependencies: ["CLuaCommon"],
-            path: "lib/Luau/EqSat",
             cxxSettings: cppDefines,
             linkerSettings: linkerSettings
         ),
