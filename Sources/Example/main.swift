@@ -47,6 +47,31 @@ private func lua_print(_ state: OpaquePointer?) -> Int32 {
     return 0
 }
 
+private func lua_require(_ state: OpaquePointer?) -> Int32 {
+    guard let state = LuaState.from(optional: state) else { return 0 }
+
+    let args = LuaValue.parseArgs(from: state, count: 1)
+    let moduleName = args[0].toString()
+
+    switch moduleName {
+    case "swiftLuau.example":
+        let table = LuaTable.create(in: state)
+        table.set(
+            key: "getPlatform",
+            to: LuaFunction.create(
+                debugName: "example.getPlatform",
+                function: lua_getPlatform,
+                in: state
+            )
+        )
+        table.setReadOnly(true)
+        table.push(to: state)
+        return 1
+    default:
+        Lua.error(state, data: "Module '\(moduleName)' not found")
+    }
+}
+
 func main() {
     guard let state = LuaState.create() else {
         print("Failed to create Lua state")
@@ -54,8 +79,8 @@ func main() {
     }
 
     state.setGlobal(
-        key: "getPlatform",
-        to: LuaFunction.create(debugName: "getPlatform", function: lua_getPlatform, in: state)
+        key: "require",
+        to: LuaFunction.create(debugName: "require", function: lua_require, in: state)
     )
     state.setGlobal(
         key: "print",
@@ -65,7 +90,18 @@ func main() {
 
     // Load lua app from resources
     let luaAppSource = """
-        print(`Hello from Luau on {getPlatform()}`)
+        local example = require("swiftLuau.example")
+
+        print(`Hello from Luau on {example.getPlatform()}`)
+
+        local status, err = pcall(function()
+            example.test = 123
+        end)
+        if status then
+            print("Modified read-only table successfully, which is unexpected")
+        else
+            print("Task failed successfully: " .. err)
+        end
 
         local function factorial(n)
             if n == 0 then
