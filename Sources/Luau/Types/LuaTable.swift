@@ -39,6 +39,23 @@ public struct LuaTable: LuaPushable, LuaGettable {
         return LuaTable(reference: ref)
     }
 
+    /// Check if the table is read-only.
+    /// - Returns: True if the table is read-only, false otherwise.
+    public func isReadOnly() -> Bool {
+        push(to: reference.state)
+        let isReadOnly = lua_getreadonly(reference.state.state, -1) != 0
+        Lua.pop(reference.state, 1)
+        return isReadOnly
+    }
+
+    /// Make the table read-only or writable.
+    /// - Parameter readOnly: True to make the table read-only, false to make it writable.
+    public func setReadOnly(_ readOnly: Bool) {
+        push(to: reference.state)
+        lua_setreadonly(reference.state.state, -1, readOnly ? 1 : 0)
+        Lua.pop(reference.state, 1)
+    }
+
     /// Set a meta table for the Lua table.
     /// - Parameters:
     ///   - metaTable: The meta table to set.
